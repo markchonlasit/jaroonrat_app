@@ -7,7 +7,9 @@ import 'equipment_section.dart';
 import 'total_equipment_section.dart';
 import 'branch.dart';
 import '/---manage---/equipment_management.dart';
-//test commit
+import '/---check---/checklist.dart';
+import 'package:flutter/cupertino.dart';
+
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
@@ -99,13 +101,20 @@ class ActionButtonSection extends StatelessWidget {
           ),
         ),
         SizedBox(width: 10),
-        SizedBox(width: 10),
         Expanded(
           child: _ActionButton(
-            label: 'ตรวจสภาพอุปกรณ์',
-            icon: Icons.check_circle,
+            label: 'ตรวจสอบอุปกรณ์',
+            icon: CupertinoIcons.checkmark_shield,
             bgColor: Color.fromARGB(255, 210, 221, 248),
             iconColor: Color(0xFF0047AB),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => checklistPage(),
+                ),
+              );
+            },
           ),
         ),
         SizedBox(width: 10),
