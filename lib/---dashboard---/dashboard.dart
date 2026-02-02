@@ -7,7 +7,7 @@ import 'equipment_section.dart';
 import 'total_equipment_section.dart';
 import 'branch.dart';
 import '/---manage---/equipment_management.dart';
-
+//test commit
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
