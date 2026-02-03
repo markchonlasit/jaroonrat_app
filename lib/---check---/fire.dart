@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '/services/auth_service.dart';
+import '/---Inspect---/inspectfire.dart';
 
 class FirePage extends StatefulWidget {
   const FirePage({super.key});
@@ -15,7 +16,8 @@ class _FirePageState extends State<FirePage> {
   String errorMessage = '';
   List fireList = [];
 
-  final String apiUrl = 'https://api.jaroonrat.com/safetyaudit/api/assetlist/0';
+  final String apiUrl =
+      'https://api.jaroonrat.com/safetyaudit/api/assetlist/0';
 
   @override
   void initState() {
@@ -35,9 +37,8 @@ class _FirePageState extends State<FirePage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
         setState(() {
-          fireList = data['asset']; // ⭐ สำคัญมาก
+          fireList = data['asset'];
           isLoading = false;
         });
       } else {
@@ -72,7 +73,7 @@ class _FirePageState extends State<FirePage> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      /// 🔴 TopBar เดิม
+      /// 🔥 APP BAR
       appBar: AppBar(
         backgroundColor: Colors.red,
         leading: IconButton(
@@ -87,7 +88,6 @@ class _FirePageState extends State<FirePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-
       ),
 
       body: isLoading
@@ -105,70 +105,87 @@ class _FirePageState extends State<FirePage> {
                   itemBuilder: (context, index) {
                     final item = fireList[index];
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: _getColorByType(item['type']),
-                          width: 2,
-                        ),
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(14),
+
+                      /// 👉 ไปหน้า Inspect
+                     onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => InspectFirePage(
+                            assetId: item['id'],
+                            assetName: item['name'] ?? 'ถังดับเพลิง', // ✅ ส่งชื่อถังไปด้วย
+                          ),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.fire_extinguisher,
+                    );
+                },
+
+
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
                             color: _getColorByType(item['type']),
-                            size: 40,
+                            width: 2,
                           ),
-                          const SizedBox(width: 14),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// ชื่อถัง
-                                Text(
-                                  item['name'] ?? '-',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-
-                                Text('รหัส: ${item['id']}'),
-                                Text('สาขา: ${item['branch']}'),
-                                Text('สถานที่: ${item['location']}'),
-                                Text('ประเภทถัง: ${item['type']}'),
-
-                                const SizedBox(height: 6),
-
-                                Row(
-                                  children: [
-                                    Icon(
-                                      item['active'] == 1
-                                          ? Icons.check_circle
-                                          : Icons.cancel,
-                                      size: 16,
-                                      color: item['active'] == 1
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      item['active'] == 1
-                                          ? 'ใช้งานอยู่'
-                                          : 'ไม่พร้อมใช้งาน',
-                                    ),
-                                  ],
-                                ),
-                              ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.fire_extinguisher,
+                              color: _getColorByType(item['type']),
+                              size: 40,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 14),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['name'] ?? '-',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+
+                                  Text('ID: ${item['id']}'),
+                                  Text('สาขา: ${item['branch']}'),
+                                  Text('สถานที่: ${item['location']}'),
+                                  Text('ประเภทถัง: ${item['type']}'),
+
+                                  const SizedBox(height: 6),
+
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        item['active'] == 1
+                                            ? Icons.check_circle
+                                            : Icons.cancel,
+                                        size: 16,
+                                        color: item['active'] == 1
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        item['active'] == 1
+                                            ? 'ใช้งานอยู่'
+                                            : 'ไม่พร้อมใช้งาน',
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

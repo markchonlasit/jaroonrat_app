@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
 import 'package:flutter/cupertino.dart';
-import '/---check---/fire.dart';
+import '/---check---/fire.dart' as fire;
+import '/---check---/ball.dart'; 
+import '/---check---/fhc.dart';
+import '/---check---/alarm.dart';
+import '/---check---/sand.dart';
+import '/---check---/eyewash.dart';
+import '/---check---/light.dart';
 
 class checklistPage extends StatelessWidget {
   const checklistPage({super.key});
@@ -81,7 +87,60 @@ class checklistPage extends StatelessWidget {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          const FirePage(),
+                                          const fire.FirePage(),
+                                    ),
+                                  );
+                                } else if (id == 1) {
+                                  // 🧯 ลูกบอลดับเพลิง
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const BallPage(),
+                                    ),
+                                  );
+                                } else if (id == 2) {
+                                  // 🚒 FHC
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const FhcPage(),
+                                    ),
+                                  );
+                                }
+                                else if (id == 3) {
+                                  // 🚨 สัญญาณเตือนภัย
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AlarmPage(),
+                                    ),
+                                  );
+                                }
+                                else if (id == 4) {
+                                  // 🏖️ ทรายดับเพลิง
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const SandPage(),
+                                    ),
+                                  );
+                                }
+                                else if (id == 6) {
+                                  // 🚰 ที่ล้างตา
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const EyewashPage(),
+                                    ),
+                                  );
+                                }
+                                else if (id == 7) {
+                                  // 💡 ไฟฉุกเฉิน
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LightPage(),
                                     ),
                                   );
                                 }
@@ -116,13 +175,13 @@ class checklistPage extends StatelessWidget {
       case 1:
         return Icons.sports_baseball;
       case 2:
-        return Icons.local_fire_department;
+        return Icons.fire_hydrant_alt;
       case 3:
         return Icons.warning_amber;
       case 4:
         return Icons.grain;
       case 6:
-        return CupertinoIcons.drop_fill;
+        return Icons.opacity;
       case 7:
         return Icons.flash_on;
       default:
@@ -138,7 +197,7 @@ class checklistPage extends StatelessWidget {
       case 0:
         return Colors.red;
       case 1:
-        return Colors.yellow;
+        return const Color.fromARGB(255, 5, 47, 233);
       case 2:
         return Colors.deepOrangeAccent;
       case 3:
