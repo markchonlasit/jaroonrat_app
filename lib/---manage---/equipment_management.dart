@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '/services/api_services.dart';
 import 'package:flutter/cupertino.dart';
+import '/services/api_services.dart';
+import 'equipment/list/list_asset.dart';
+
 class EquipmentManagementPage extends StatelessWidget {
   const EquipmentManagementPage({super.key});
 
@@ -21,7 +23,7 @@ class EquipmentManagementPage extends StatelessWidget {
         title: const Text(
           'หน้าหลัก',
           style: TextStyle(
-            color: Colors.white, // 👈 สีตัวอักษร
+            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -32,68 +34,63 @@ class EquipmentManagementPage extends StatelessWidget {
       /// 🔹 BODY
       /// =========================
       body: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 24, // 👈 เพิ่มความสูง
-          horizontal: 24,
-        ),
-        child: Column(
-          children: [
-       
-            const SizedBox(height: 30),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+        child: FutureBuilder<List<dynamic>>(
+          future: ApiService.getCategory(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-            /// 🔹 ดึงข้อมูลจาก API
-            Expanded(
-              child: FutureBuilder<List<dynamic>>(
-                future: ApiService.getCategory(),
-                builder: (context, snapshot) {
-                  // loading
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+            if (snapshot.hasError) {
+              return const Center(
+                child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล'),
+              );
+            }
 
-                  // error
-                  if (snapshot.hasError) {
-                    return const Center(
-                      child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล'),
-                    );
-                  }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('ไม่พบข้อมูลอุปกรณ์'));
+            }
 
-                  // empty
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('ไม่พบข้อมูลอุปกรณ์'));
-                  }
+            final categories = snapshot.data!;
+            final total = categories.length;
 
-                  final categories = snapshot.data!;
-                  final total = categories.length;
+            return Column(
+              children: [
+                _HeaderCard(total: total),
+                const SizedBox(height: 30),
 
-                  return Column(
-                    children: [
-                      /// 🔹 HEADER (มีจำนวนรายการ)
-                      _HeaderCard(total: total),
-                      const SizedBox(height: 30),
+                /// 🔹 LIST CATEGORY
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final item = categories[index];
+                      final int id = item['id'];
 
-                      /// 🔹 LIST
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: categories.length,
-                          itemBuilder: (context, index) {
-                            final item = categories[index];
-                            final int id = item['id'];
-
-                            return _EquipmentItem(
-                              icon: _getIconByCategory(id),
-                              title: item['name'],
-                              borderColor: _getColorByCategory(id),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
+                      return _EquipmentItem(
+                        icon: _getIconByCategory(id),
+                        title: item['name'],
+                        borderColor: _getColorByCategory(id),
+                        onTap: () {
+                          /// 👉 ไปหน้าแสดงรายการอุปกรณ์
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AssetListPage(
+                                categoryId: id,
+                                categoryName: item['name'],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -104,19 +101,19 @@ class EquipmentManagementPage extends StatelessWidget {
   /// =========================
   IconData _getIconByCategory(int id) {
     switch (id) {
-      case 0: // ถังดับเพลิง
+      case 0:
         return Icons.fire_extinguisher;
-      case 1: // ลูกบอลดับเพลิง
+      case 1:
         return Icons.sports_baseball;
-      case 2: // ตู้น้ำดับเพลิง
+      case 2:
         return Icons.local_fire_department;
-      case 3: // สัญญาณแจ้งเหตุ
+      case 3:
         return Icons.warning_amber;
-      case 4: // ทรายซับสารเคมี
+      case 4:
         return Icons.grain;
-      case 6: // ที่ล้างตา
+      case 6:
         return CupertinoIcons.drop_fill;
-      case 7: // ไฟฉุกเฉิน
+      case 7:
         return Icons.flash_on;
       default:
         return Icons.inventory_2;
@@ -147,14 +144,56 @@ class EquipmentManagementPage extends StatelessWidget {
     }
   }
 }
+class _EquipmentItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color borderColor;
+  final VoidCallback onTap;
 
-/// =========================
-/// 🔹 HEADER CARD
-/// =========================
+  const _EquipmentItem({
+    required this.icon,
+    required this.title,
+    required this.borderColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        height: 100,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black, width: 2),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 48, color: borderColor),
+            const SizedBox(width: 18),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 class _HeaderCard extends StatelessWidget {
   final int total;
 
-  const _HeaderCard({ required this.total});
+  const _HeaderCard({required this.total});
 
   @override
   Widget build(BuildContext context) {
@@ -166,8 +205,8 @@ class _HeaderCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          /// 🔹 ICON + TITLE
-          const Icon(Icons.assignment_outlined, color: Colors.blue, size: 36),
+          const Icon(Icons.assignment_outlined,
+              color: Colors.blue, size: 36),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
@@ -175,8 +214,6 @@ class _HeaderCard extends StatelessWidget {
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
-
-          /// 🔹 TOTAL BADGE (ขวา)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             decoration: BoxDecoration(
@@ -196,56 +233,6 @@ class _HeaderCard extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// =========================
-/// 🔹 EQUIPMENT ITEM
-/// =========================
-class _EquipmentItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Color borderColor;
-
-  const _EquipmentItem({
-    required this.icon,
-    required this.title,
-    required this.borderColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-
-      // ⭐ ความสูงใกล้รูป
-      height: 100,
-
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black, width: 2),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // 👈 ข้อความอยู่ด้านบน
-        children: [
-          Icon(
-            icon,
-            size: 48, // 👈 ไอคอนใหญ่แบบในรูป
-            color: borderColor,
-          ),
-          const SizedBox(width: 18),
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
         ],
