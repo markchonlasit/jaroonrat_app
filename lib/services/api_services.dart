@@ -9,16 +9,14 @@ class ApiService {
   }
 
   // CATEGORY
-  // CATEGORY
   static Future<List<dynamic>> getCategory() async {
     final res = await ApiClient.get('/api/category');
-    return jsonDecode(res.body);
+    return jsonDecode(res.body) as List<dynamic>;
   }
 
-  // ASSET LIST (categoryId)
-  static Future<List<dynamic>> getAssetList(int categoryId) async {
+  static Future<Map<String, dynamic>> getAssetList(int categoryId) async {
     final res = await ApiClient.get('/api/assetlist/$categoryId');
-    return jsonDecode(res.body);
+    return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
   // ASSET DETAIL (id)

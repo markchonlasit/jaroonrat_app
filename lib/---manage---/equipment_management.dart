@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '/services/api_services.dart';
-import 'equipment/list/list_asset.dart';
+
+// อยู่โฟลเดอร์เดียวกัน
+import 'equipment_list.dart';
 
 class EquipmentManagementPage extends StatelessWidget {
   const EquipmentManagementPage({super.key});
@@ -43,17 +45,17 @@ class EquipmentManagementPage extends StatelessWidget {
             }
 
             if (snapshot.hasError) {
-              return const Center(
-                child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล'),
-              );
+              return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล'));
             }
 
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(child: Text('ไม่พบข้อมูลอุปกรณ์'));
             }
 
-            final categories = snapshot.data!;
-            final total = categories.length;
+            final List categories = snapshot.data!;
+
+            /// ✅ ใช้ length เท่านั้น (จำนวนประเภทอุปกรณ์)
+            final int total = categories.length;
 
             return Column(
               children: [
@@ -66,20 +68,22 @@ class EquipmentManagementPage extends StatelessWidget {
                     itemCount: categories.length,
                     itemBuilder: (context, index) {
                       final item = categories[index];
-                      final int id = item['id'];
+
+                      // ✅ ตรงกับ JSON ที่คุณส่งมา
+                      final int categoryId = item['id'];
+                      final String categoryName = item['name'];
 
                       return _EquipmentItem(
-                        icon: _getIconByCategory(id),
-                        title: item['name'],
-                        borderColor: _getColorByCategory(id),
+                        icon: _getIconByCategory(categoryId),
+                        title: categoryName,
+                        borderColor: _getColorByCategory(categoryId),
                         onTap: () {
-                          /// 👉 ไปหน้าแสดงรายการอุปกรณ์
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => AssetListPage(
-                                categoryId: id,
-                                categoryName: item['name'],
+                                categoryId: categoryId,
+                                categoryName: categoryName,
                               ),
                             ),
                           );
@@ -114,7 +118,7 @@ class EquipmentManagementPage extends StatelessWidget {
       case 6:
         return CupertinoIcons.drop_fill;
       case 7:
-        return Icons.flash_on;
+        return CupertinoIcons.lightbulb;
       default:
         return Icons.inventory_2;
     }
@@ -144,6 +148,10 @@ class EquipmentManagementPage extends StatelessWidget {
     }
   }
 }
+
+/// =========================
+/// 🔹 ITEM CARD
+/// =========================
 class _EquipmentItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -172,17 +180,12 @@ class _EquipmentItem extends StatelessWidget {
           border: Border.all(color: Colors.black, width: 2),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, size: 48, color: borderColor),
             const SizedBox(width: 18),
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                title,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -190,6 +193,10 @@ class _EquipmentItem extends StatelessWidget {
     );
   }
 }
+
+/// =========================
+/// 🔹 HEADER CARD
+/// =========================
 class _HeaderCard extends StatelessWidget {
   final int total;
 
@@ -205,8 +212,7 @@ class _HeaderCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.assignment_outlined,
-              color: Colors.blue, size: 36),
+          const Icon(Icons.assignment_outlined, color: Colors.blue, size: 36),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
