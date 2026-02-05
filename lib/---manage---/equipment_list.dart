@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
 
+import 'equipment_view.dart';
+
 class AssetListPage extends StatefulWidget {
   final int categoryId;
   final String categoryName;
@@ -102,60 +104,57 @@ class _AssetListPageState extends State<AssetListPage> {
     );
   }
 
- /// =========================
-/// SUMMARY CARD
-/// =========================
-Widget _summaryCard(int total) {
-  final icon = _getIconByCategory(widget.categoryId);
-  final color = _getColorByCategory(widget.categoryId);
+  /// =========================
+  /// SUMMARY CARD
+  /// =========================
+  Widget _summaryCard(int total) {
+    final icon = _getIconByCategory(widget.categoryId);
+    final color = _getColorByCategory(widget.categoryId);
 
-  return Padding(
-    padding: const EdgeInsets.all(16),
-    child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          /// 🔹 ICON ตามประเภทอุปกรณ์
-          Icon(
-            icon,
-            size: 36,
-            color: color,
-          ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            /// 🔹 ICON ตามประเภทอุปกรณ์
+            Icon(icon, size: 36, color: color),
 
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-          /// 🔹 TEXT SUMMARY
-          Expanded(
-            child: Text(
-              'รายการ${widget.categoryName}ทั้งหมด\nจำนวนทั้งหมด $total',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-          ),
-
-          /// 🔹 CATEGORY TAG
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              border: Border.all(color: color),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              widget.categoryName,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w500,
+            /// 🔹 TEXT SUMMARY
+            Expanded(
+              child: Text(
+                'รายการ${widget.categoryName}ทั้งหมด\nจำนวนทั้งหมด $total',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-        ],
+
+            /// 🔹 CATEGORY TAG
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border.all(color: color),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                widget.categoryName,
+                style: TextStyle(color: color, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   /// =========================
   /// SEARCH BAR
   /// =========================
@@ -226,13 +225,8 @@ Widget _summaryCard(int total) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 /// 🔹 ชื่ออุปกรณ์ (บรรทัดที่ 1)
-                Text(
-                  item['name'] ?? '-',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+
+                 _chip('${item['name']}', color: const Color.fromARGB(255, 212, 211, 211)),
 
                 const SizedBox(height: 6),
 
@@ -273,8 +267,14 @@ Widget _summaryCard(int total) {
                 width: 90,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // TODO: ไปหน้า detail
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EquipmentViewPage(assetId: item['id']),
+                      ),
+                    );
                   },
+
                   icon: const Icon(Icons.visibility, size: 14),
                   label: const Text(
                     'รายละเอียด',
