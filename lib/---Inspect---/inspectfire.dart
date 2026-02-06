@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
 import '/services/auth_service.dart';
-import '/---audit---/audit_fire.dart';
+import '/---audit---/audit_fire_detail.dart';
 
 class InspectFirePage extends StatefulWidget {
   final int assetId;
@@ -20,20 +21,14 @@ class InspectFirePage extends StatefulWidget {
 
 class _InspectFirePageState extends State<InspectFirePage> {
   bool isLoading = true;
-  bool isSubmitting = false;
-  String errorMessage = '';
-  List checklist = [];
+  List<dynamic> checklist = [];
 
-  /// checklistId : true(Y) / false(N)
-  Map<int, bool> selectedResult = {};
+  /// checklistId -> true(ผ่าน) / false(ไม่ผ่าน)
+  final Map<int, bool> selectedResult = {};
 
-  /// ✅ API ตรวจสอบ
-  final String apiChecklist =
-      'https://api.jaroonrat.com/safetyaudit/api/checklist/0/1';
-
-  /// ✅ API บันทึกผล
-  final String apiSubmit =
-      'https://api.jaroonrat.com/safetyaudit/api/submitaudit';
+  /// 🔥 checklist ของถังนั้นจริง ๆ
+  String get checklistApi =>
+      'https://api.jaroonrat.com/safetyaudit/api/checklist/0/${widget.assetId}';
 
   @override
   void initState() {
@@ -41,59 +36,62 @@ class _InspectFirePageState extends State<InspectFirePage> {
     fetchChecklist();
   }
 
-  /// 🔹 ดึงหัวข้อการตรวจสอบ
+  /// 🔽 โหลด checklist ตาม assetId
   Future<void> fetchChecklist() async {
     try {
-      final response = await http.get(
-        Uri.parse('$apiChecklist${widget.assetId}'),
+      setState(() => isLoading = true);
+
+      final res = await http.get(
+        Uri.parse(checklistApi),
         headers: {
           'Authorization': 'Bearer ${AuthService.token}',
         },
       );
 
-      if (response.statusCode == 200) {
+      if (res.statusCode == 200) {
         setState(() {
-          checklist = json.decode(response.body);
+          checklist = jsonDecode(res.body);
           isLoading = false;
         });
       } else {
-        setState(() {
-          errorMessage = 'โหลดข้อมูลไม่สำเร็จ (${response.statusCode})';
-          isLoading = false;
-        });
-      }
-    } catch (_) {
-      setState(() {
-        errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
         isLoading = false;
-      });
+        _showError('โหลด checklist ไม่สำเร็จ (${res.statusCode})');
+      }
+    } catch (e) {
+      isLoading = false;
+      _showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
     }
   }
 
-  /// 🔹 บันทึกผลการตรวจสอบ
+  /// 🔥 ส่งข้อมูลตรวจสอบ
   Future<void> submitAudit() async {
     if (selectedResult.length != checklist.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณาตรวจสอบให้ครบทุกข้อ')),
-      );
+      _showError('กรุณาตรวจสอบให้ครบทุกข้อ');
       return;
     }
 
-    setState(() => isSubmitting = true);
-
+    /// ✅ PAYLOAD ตรง backend (Postman)
     final payload = {
       "assetid": widget.assetId,
-      "detail": selectedResult.entries.map((e) {
+      "remark": "ทดสอบ",
+      "ans": checklist.map((item) {
+        final int id = item['id'];
+        final bool isPass = selectedResult[id] ?? false;
+
         return {
-          "checklist_id": e.key,
-          "result": e.value ? "Y" : "N",
+          "id": id,
+          "status": isPass ? 1 : 2, // 1 = ผ่าน, 2 = ไม่ผ่าน
         };
       }).toList(),
     };
 
+    debugPrint('📦 PAYLOAD => ${jsonEncode(payload)}');
+
     try {
-      final response = await http.post(
-        Uri.parse(apiSubmit),
+      final res = await http.post(
+        Uri.parse(
+          'https://api.jaroonrat.com/safetyaudit/api/submitaudit',
+        ),
         headers: {
           'Authorization': 'Bearer ${AuthService.token}',
           'Content-Type': 'application/json',
@@ -101,48 +99,63 @@ class _InspectFirePageState extends State<InspectFirePage> {
         body: jsonEncode(payload),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      debugPrint('STATUS => ${res.statusCode}');
+      debugPrint('BODY => ${res.body}');
+
+      if (res.statusCode == 200) {
         if (!mounted) return;
 
-        /// ✅ ไปหน้า audit_fire.dart
+        /// 📋 เตรียมข้อมูลไปหน้า detail
+        final detailResult = checklist.map<Map<String, dynamic>>((item) {
+          final int id = item['id'];
+          return {
+            "name": item['name'],
+            "answer": selectedResult[id]!
+                ? item['detail_Y']
+                : item['detail_N'],
+          };
+        }).toList();
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => AuditFirePage(assetId: widget.assetId),
+            builder: (_) => AuditFireDetailPage(),
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('บันทึกไม่สำเร็จ (${response.statusCode})')),
-        );
+        _showError('บันทึกไม่สำเร็จ (${res.statusCode})');
       }
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('เกิดข้อผิดพลาดในการบันทึก')),
-      );
-    } finally {
-      setState(() => isSubmitting = false);
+    } catch (e) {
+      _showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
     }
   }
 
-  /// 🔹 popup ยกเลิก
-  void showCancelDialog() {
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  void _confirmCancel() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('ยืนยันการยกเลิก'),
-        content: const Text('คุณต้องการยกเลิกการตรวจสอบครั้งนี้หรือไม่'),
+        content: const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
         actions: [
           TextButton(
-            child: const Text('ยกเลิก'),
             onPressed: () => Navigator.pop(context),
+            child: const Text('ไม่ยกเลิก'),
           ),
           TextButton(
-            child: const Text('ยืนยัน'),
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context);
             },
+            child: const Text(
+              'ยกเลิก',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -152,124 +165,119 @@ class _InspectFirePageState extends State<InspectFirePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      /// 🔴 ใช้ชื่อถังจาก fire.dart
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         backgroundColor: Colors.red,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          widget.assetName,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text(widget.assetName),
       ),
-
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage))
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: checklist.length,
-                        itemBuilder: (context, index) {
-                          final item = checklist[index];
-                          final id = item['id'];
+          : Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: checklist.length,
+                    itemBuilder: (_, i) {
+                      final item = checklist[i];
+                      final int id = item['id'];
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              border:
-                                  Border.all(color: Colors.red, width: 1.5),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['name'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['name'],
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
+                            const SizedBox(height: 10),
+
+                            /// ✅ ผ่าน
+                            InkWell(
+                              onTap: () =>
+                                  setState(() => selectedResult[id] = true),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    selectedResult[id] == true
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    color: Colors.green,
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-
-                                RadioListTile<bool>(
-                                  title: Text(item['detail_Y']),
-                                  value: true,
-                                  groupValue: selectedResult[id],
-                                  onChanged: (val) {
-                                    setState(() {
-                                      selectedResult[id] = val!;
-                                    });
-                                  },
-                                ),
-                                RadioListTile<bool>(
-                                  title: Text(item['detail_N']),
-                                  value: false,
-                                  groupValue: selectedResult[id],
-                                  onChanged: (val) {
-                                    setState(() {
-                                      selectedResult[id] = val!;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    /// 🔴 ปุ่มล่าง
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: showCancelDialog,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red,
-                                side: const BorderSide(color: Colors.red),
+                                  const SizedBox(width: 8),
+                                  Text(item['detail_Y']),
+                                ],
                               ),
-                              child: const Text('ยกเลิก'),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: isSubmitting ? null : submitAudit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
+
+                            const SizedBox(height: 8),
+
+                            /// ❌ ไม่ผ่าน
+                            InkWell(
+                              onTap: () =>
+                                  setState(() => selectedResult[id] = false),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    selectedResult[id] == false
+                                        ? Icons.cancel
+                                        : Icons.radio_button_unchecked,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(item['detail_N']),
+                                ],
                               ),
-                              child: isSubmitting
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'บันทึก',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
+
+                /// 🔘 ปุ่มล่าง
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _confirmCancel,
+                          child: const Text('ยกเลิก'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: submitAudit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          child: const Text('บันทึก'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

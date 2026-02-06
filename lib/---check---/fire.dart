@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
 import '/services/auth_service.dart';
 import '/---Inspect---/inspectfire.dart';
+import '/---audit---/audit_fire_detail.dart';
 
 class FirePage extends StatefulWidget {
   const FirePage({super.key});
@@ -38,21 +40,18 @@ class _FirePageState extends State<FirePage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
-          fireList = data['asset'];
+          fireList = data['asset'] ?? [];
           isLoading = false;
         });
       } else {
-        setState(() {
-          errorMessage = 'โหลดข้อมูลไม่สำเร็จ (${response.statusCode})';
-          isLoading = false;
-        });
+        errorMessage = 'โหลดข้อมูลไม่สำเร็จ (${response.statusCode})';
+        isLoading = false;
       }
     } catch (e) {
-      setState(() {
-        errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
-        isLoading = false;
-      });
+      errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+      isLoading = false;
     }
+    setState(() {});
   }
 
   Color _getColorByType(String type) {
@@ -73,32 +72,31 @@ class _FirePageState extends State<FirePage> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      /// 🔥 APP BAR
       appBar: AppBar(
         backgroundColor: Colors.red,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: const Text(
           'ถังดับเพลิงทั้งหมด',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AuditFireDetailPage(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
 
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(
-                  child: Text(
-                    errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                )
+              ? Center(child: Text(errorMessage))
               : ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: fireList.length,
@@ -106,22 +104,17 @@ class _FirePageState extends State<FirePage> {
                     final item = fireList[index];
 
                     return InkWell(
-                      borderRadius: BorderRadius.circular(14),
-
-                      /// 👉 ไปหน้า Inspect
-                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => InspectFirePage(
-                            assetId: item['id'],
-                            assetName: item['name'] ?? 'ถังดับเพลิง', // ✅ ส่งชื่อถังไปด้วย
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => InspectFirePage(
+                              assetId: item['id'],
+                              assetName: item['name'] ?? 'ถังดับเพลิง',
+                            ),
                           ),
-                      ),
-                    );
-                },
-
-
+                        );
+                      },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
@@ -133,7 +126,6 @@ class _FirePageState extends State<FirePage> {
                           ),
                         ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
                               Icons.fire_extinguisher,
@@ -141,7 +133,6 @@ class _FirePageState extends State<FirePage> {
                               size: 40,
                             ),
                             const SizedBox(width: 14),
-
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,38 +140,35 @@ class _FirePageState extends State<FirePage> {
                                   Text(
                                     item['name'] ?? '-',
                                     style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                        fontWeight: FontWeight.bold),
                                   ),
-                                  const SizedBox(height: 6),
-
                                   Text('ID: ${item['id']}'),
                                   Text('สาขา: ${item['branch']}'),
                                   Text('สถานที่: ${item['location']}'),
-                                  Text('ประเภทถัง: ${item['type']}'),
+                                  Text('ประเภท: ${item['type']}'),
 
                                   const SizedBox(height: 6),
 
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        item['active'] == 1
-                                            ? Icons.check_circle
-                                            : Icons.cancel,
-                                        size: 16,
-                                        color: item['active'] == 1
-                                            ? Colors.green
-                                            : Colors.red,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        item['active'] == 1
-                                            ? 'ใช้งานอยู่'
-                                            : 'ไม่พร้อมใช้งาน',
-                                      ),
-                                    ],
-                                  ),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      item['active'] == 1
+                                          ? Icons.check_circle
+                                          : Icons.cancel,
+                                      size: 16,
+                                      color: item['active'] == 1
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      item['active'] == 1
+                                          ? 'ใช้งานอยู่'
+                                          : 'ไม่พร้อมใช้งาน',
+                                    ),
+                                  ],
+                                ),
+                            
                                 ],
                               ),
                             ),
