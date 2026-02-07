@@ -124,7 +124,7 @@ class ActionButtonSection extends StatelessWidget {
             icon: Icons.notifications,
             bgColor: Color.fromARGB(255, 235, 227, 213),
             iconColor: Colors.orange,
-            badge: 1,
+            badge: 0,
           ),
         ),
       ],

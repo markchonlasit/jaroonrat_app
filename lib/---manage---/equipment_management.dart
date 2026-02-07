@@ -118,7 +118,7 @@ class EquipmentManagementPage extends StatelessWidget {
       case 6:
         return CupertinoIcons.drop_fill;
       case 7:
-        return CupertinoIcons.lightbulb;
+        return Icons.lightbulb;
       default:
         return Icons.inventory_2;
     }
