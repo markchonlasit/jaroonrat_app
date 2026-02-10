@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import '/services/api_services.dart';
 
-/// =========================
-/// 🔹 EQUIPMENT SECTION
-/// =========================
 class EquipmentSection extends StatefulWidget {
   const EquipmentSection({super.key});
 
@@ -12,127 +9,122 @@ class EquipmentSection extends StatefulWidget {
 }
 
 class _EquipmentSectionState extends State<EquipmentSection> {
-  final List<Map<String, dynamic>> devices = [
-    {
-      "name": "ถังดับเพลิง",
-      "status": {"normal": 9, "abnormal": 5, "pending": 2, "total": 16},
-      "types": [
-        {"label": "ผงเคมีแห้ง", "value": 10},
-        {"label": "คาร์บอนไดออกไซด์", "value": 4},
-      ],
-    },
-    {
-      "name": "ไฟฉุกเฉิน",
-      "status": {"normal": 12, "abnormal": 1, "pending": 3, "total": 16},
-    },
-    {
-      "name": "อราม",
-      "status": {"normal": 8, "abnormal": 0, "pending": 1, "total": 9},
-    },
-    {
-      "name": "อ่างล้างตา",
-      "status": {"normal": 4, "abnormal": 1, "pending": 0, "total": 5},
-    },
-    {
-      "name": "ทรายดับเพลิง",
-      "status": {"normal": 6, "abnormal": 0, "pending": 0, "total": 6},
-    },
-  ];
+  List<dynamic> categories = [];
+  Map<String, dynamic> statusData = {
+    "normal": 0, "abnormal": 0, "pending": 0, "total": 0
+  };
 
-  int selectedIndex = 0;
-  bool loading = false;
+  int? selectedCategoryId;
+  int selectedMonth = 202602;
+  bool isLoading = true;
 
-  /// 🔹 รองรับ API ตอนเปลี่ยน select
-  Future<void> _onDeviceChanged(int index) async {
-    setState(() {
-      selectedIndex = index;
-      loading = true;
-    });
+  final List<int> monthOptions = [202602, 202601, 202512];
 
-    // 🔸 ตัวอย่าง: เรียก API
-    // final result = await fetchDeviceSummary(devices[index]['name']);
-    // setState(() {
-    //   devices[index] = result;
-    // });
+  @override
+  void initState() {
+    super.initState();
+    _fetchInitialData();
+  }
 
-    await Future.delayed(const Duration(milliseconds: 400)); // mock API
-    setState(() => loading = false);
+  Future<void> _fetchInitialData() async {
+    try {
+      final fetchedCategories = await ApiService.getCategory();
+      if (fetchedCategories.isNotEmpty) {
+        setState(() {
+          categories = fetchedCategories;
+          selectedCategoryId = fetchedCategories[0]['id'];
+        });
+        await _fetchDashboardData();
+      }
+    } catch (e) {
+      debugPrint("Error: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _fetchDashboardData() async {
+    if (selectedCategoryId == null) return;
+    setState(() => isLoading = true);
+    try {
+      final result = await ApiService.getCategoryDashboard(selectedCategoryId!, selectedMonth);
+      setState(() => statusData = result);
+    } catch (e) {
+      debugPrint("API Error: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final device = devices[selectedIndex];
-    final status = device['status'];
-
     return Card(
-      color: const Color.fromARGB(255, 240, 241, 241),
+      color: const Color.fromARGB(255, 241, 239, 239),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: Colors.black),
+        
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             _title('สรุปผลรวมการตรวจสภาพเเต่ละอุปกรณ์ต่อเดือน'),
-            const SizedBox(height: 8),
+            const SizedBox(height: 18),
 
-            /// 🔹 DROPDOWN
-            DropdownButton<int>(
-              value: selectedIndex,
-              isExpanded: true,
-              underline: const SizedBox(),
-              items: List.generate(
-                devices.length,
-                (i) =>
-                    DropdownMenuItem(value: i, child: Text(devices[i]['name'])),
-              ),
-              onChanged: (v) {
-                if (v != null) _onDeviceChanged(v);
-              },
+            /// 🔹 ปรับแต่ง Dropdown ให้สวยงาม
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildStyledDropdown<int>(
+                    value: selectedCategoryId,
+                    items: categories.map((cat) => DropdownMenuItem<int>(
+                      value: cat['id'], 
+                      child: Text(cat['name'], style: const TextStyle(fontSize: 14)),
+                    )).toList(),
+                    onChanged: (v) {
+                      setState(() => selectedCategoryId = v);
+                      _fetchDashboardData();
+                    },
+                    hint: "เลือกอุปกรณ์",
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: _buildStyledDropdown<int>(
+                    value: selectedMonth,
+                    items: monthOptions.map((m) => DropdownMenuItem<int>(
+                      value: m, 
+                      child: Text(m.toString(), style: const TextStyle(fontSize: 14)),
+                    )).toList(),
+                    onChanged: (v) {
+                      setState(() => selectedMonth = v!);
+                      _fetchDashboardData();
+                    },
+                    hint: "เดือน",
+                  ),
+                ),
+              ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-            if (loading)
-              const Padding(
-                padding: EdgeInsets.all(12),
-                child: CircularProgressIndicator(),
-              )
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
             else ...[
-              /// 🔹 STATUS
               Row(
                 children: [
-                  _StatusBox(
-                    'ปกติ',
-                    status['normal'],
-                    Colors.green,
-                    icon: Icons.check_circle,
-                  ),
-                  _StatusBox(
-                    'ไม่ปกติ',
-                    status['abnormal'],
-                    Colors.red,
-                    icon: Icons.error,
-                  ),
-                  _StatusBox(
-                    'รอตรวจ',
-                    status['pending'],
-                    Colors.orange,
-                    icon: Icons.schedule,
-                  ),
+                  _StatusBox(' ปกติ', statusData['normal'] ?? 0, Colors.green, icon: Icons.check_circle),
+                  _StatusBox('ไม่ปกติ', statusData['abnormal'] ?? 0, Colors.red, icon: Icons.error),
+                  _StatusBox('รอตรวจ', statusData['pending'] ?? 0, Colors.orange, icon: Icons.schedule),
                 ],
               ),
-
               const SizedBox(height: 12),
-              _totalBox(status['total']),
+              _totalBox(statusData['total'] ?? 0),
               const SizedBox(height: 12),
-
-              /// 🔹 TYPE
-              if (device.containsKey('types'))
-                _donutChart(device['types'])
-              else
-                _noTypeBox(),
+              _noTypeBox(),
             ],
           ],
         ),
@@ -140,182 +132,100 @@ class _EquipmentSectionState extends State<EquipmentSection> {
     );
   }
 
+  /// 🔹 ฟังก์ชันสร้าง Dropdown ที่มีสไตล์
+  Widget _buildStyledDropdown<T>({
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    required String hint,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        filled: true,
+        fillColor: Colors.white,
+        hintText: hint,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade400),
+        ),
+      ),
+    );
+  }
+
+  // --- UI Reusable Widgets (เหมือนเดิมแต่ปรับ Padding/Font เล็กน้อย) ---
   Widget _title(String text) => Container(
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: const Color(0xFF0047AB),
-      borderRadius: BorderRadius.circular(8),
-    ),
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(color: const Color(0xFF0047AB), borderRadius: BorderRadius.circular(14)),
     child: Row(
       children: [
-        const Icon(Icons.bar_chart, color: Colors.white),
+        const Icon(Icons.bar_chart, color: Colors.white, size: 20),
         const SizedBox(width: 8),
-        Text(text, style: const TextStyle(color: Colors.white)),
+        Expanded(child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))),
       ],
     ),
   );
 
-  Widget _totalBox(int total) => Card(
-    color: Colors.blueAccent,
-    child: ListTile(
-      leading: const Icon(Icons.build, color: Colors.white),
-      title: const Text(
-        'จำนวนอุปกรณ์ทั้งหมด',
-        style: TextStyle(color: Colors.white),
-      ),
-      trailing: Text(
-        '$total',
-        style: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
+  Widget _totalBox(int total) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(color: Colors.blueAccent, borderRadius: BorderRadius.circular(12)),
+    child: Row(
+      children: [
+        const Icon(Icons.build, color: Colors.white),
+        const SizedBox(width: 12),
+        const Text('จำนวนอุปกรณ์ทั้งหมด', style: TextStyle(color: Colors.white,fontSize: 18, fontWeight: FontWeight.w500)),
+        const Spacer(),
+        Text('$total', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+      ],
     ),
   );
 
   Widget _noTypeBox() => Container(
-    padding: const EdgeInsets.symmetric(vertical: 24),
+    padding: const EdgeInsets.symmetric(vertical: 20),
     width: double.infinity,
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.black),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: const Center(child: Text('ไม่มีประเภทของอุปกรณ์ชนิดนี้')),
+    decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.black), borderRadius: BorderRadius.circular(10)),
+    child: const Center(child: Text('ไม่มีประเภทของอุปกรณ์ชนิดนี้', style: TextStyle(color: Colors.grey))),
   );
-
-  Widget _donutChart(List types) {
-    final colors = [Colors.orangeAccent, Colors.blue];
-    final total = types.fold<int>(0, (s, t) => s + (t['value'] as int));
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 90,
-            height: 90,
-            child: PieChart(
-              PieChartData(
-                centerSpaceRadius: 10, // ✅ รู donut ชัด
-                sectionsSpace: 2, // ✅ เว้นช่อง slice
-                startDegreeOffset: -90, // ✅ เริ่มด้านบน (ดูสมดุล)
-                sections: List.generate(types.length, (i) {
-                  return PieChartSectionData(
-                    value: (types[i]['value'] as int).toDouble(),
-                    color: colors[i % colors.length],
-                    title: '',
-                  );
-                }),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: List.generate(types.length, (i) {
-                final percent = ((types[i]['value'] / total) * 100)
-                    .toStringAsFixed(1);
-                return _LegendItem(
-                  color: colors[i % colors.length],
-                  label: types[i]['label'],
-                  value: '$percent%',
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-/// =========================
-/// 🔹 STATUS BOX (FIXED)
-/// =========================
 class _StatusBox extends StatelessWidget {
   final String label;
   final int value;
   final Color color;
   final IconData icon;
-
   const _StatusBox(this.label, this.value, this.color, {required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 95,
+        height: 90,
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.black),
-        ),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: Colors.white, size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
+                Icon(icon, color: Colors.white, size: 14),
+                const SizedBox(width: 4),
+                Text(label, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
-            Text(
-              '$value',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            const SizedBox(height: 4),
+            Text('$value', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// =========================
-/// 🔹 LEGEND ITEM
-/// =========================
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-  final String value;
-
-  const _LegendItem({
-    required this.color,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Text(label)),
-          Text(value),
-        ],
       ),
     );
   }

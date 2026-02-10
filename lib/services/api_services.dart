@@ -54,4 +54,23 @@ class ApiService {
     final res = await ApiClient.get('/api/auditdetail/$id');
     return jsonDecode(res.body);
   }
+
+  // totalDashboard
+  static Future<Map<String, dynamic>> gettotalDashboard() async {
+    final res = await ApiClient.get('/api/dashboard');
+    return jsonDecode(res.body);
+  }
+
+  // categoryDashboard (categoryId / assetId)
+  static Future<Map<String, dynamic>> getCategoryDashboard(
+    int categoryId,
+    int month,
+  ) async {
+    final res = await ApiClient.get('/api/dashboard/$categoryId/$month');
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to load dashboard');
+    }
+  }
 }
