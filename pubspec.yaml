@@ -38,6 +38,8 @@ dependencies:
   fl_chart: ^0.66.0
   http: ^1.2.0
   awesome_dialog: ^3.3.0
+  month_picker_dialog: 6.7.1
+
 
 dev_dependencies:
   flutter_test:
