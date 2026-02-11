@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
-
+import 'package:flutter/cupertino.dart';
 import 'equipment_view.dart';
+import 'equipment_edit.dart';
 
 class AssetListPage extends StatefulWidget {
   final int categoryId;
@@ -225,15 +226,15 @@ class _AssetListPageState extends State<AssetListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 /// 🔹 ชื่ออุปกรณ์ (บรรทัดที่ 1)
-
-                 _chip('${item['name']}', color: const Color.fromARGB(255, 212, 211, 211)),
+                _chip(
+                  '${item['name']}',
+                  color: const Color.fromARGB(255, 212, 211, 211),
+                ),
 
                 const SizedBox(height: 6),
 
                 /// 🔹 ประเภทอุปกรณ์ (บรรทัดที่ 2)
-                if (fireAsset &&
-                    item['type'] != null &&
-                    item['type'].toString().isNotEmpty)
+                if (fireAsset)
                   _chip('ประเภท ${item['type']}', color: Colors.amber.shade200),
 
                 const SizedBox(height: 8),
@@ -274,7 +275,6 @@ class _AssetListPageState extends State<AssetListPage> {
                       ),
                     );
                   },
-
                   icon: const Icon(Icons.visibility, size: 14),
                   label: const Text(
                     'รายละเอียด',
@@ -296,13 +296,23 @@ class _AssetListPageState extends State<AssetListPage> {
 
               const SizedBox(height: 6),
 
-              /// 🔹 แก้ไข
+              /// 🔹 แก้ไข (Popup)
               SizedBox(
                 width: 90,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: ไปหน้าแก้ไข
+                  onPressed: () async {
+                    final updated = await showEditAssetDialog(
+                      context,
+                      item['id'], // Map<String, dynamic> ของ asset
+                    );
+
+                    if (updated == true) {
+                      setState(() {
+                        // reload list หรือ FutureBuilder
+                      });
+                    }
                   },
+
                   icon: const Icon(Icons.edit, size: 14),
                   label: const Text('แก้ไข', style: TextStyle(fontSize: 11)),
                   style: ElevatedButton.styleFrom(
@@ -350,7 +360,7 @@ IconData _getIconByCategory(int id) {
     case 4:
       return Icons.grain; // ทรายซับสารเคมี
     case 6:
-      return Icons.remove_red_eye; // 👈 อ่างล้างตา (ชัดกว่า drop)
+      return CupertinoIcons.drop_fill; // 👈 อ่างล้างตา (ชัดกว่า drop)
     case 7:
       return Icons.lightbulb; // ไฟฉุกเฉิน
     default:
