@@ -1,25 +1,24 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
 import '/services/auth_service.dart';
-import '/---audit---/audit_fire_detail.dart';
 
-class InspectFirePage extends StatefulWidget {
+
+class InspectEyewashPage extends StatefulWidget {
   final int assetId;
   final String assetName;
 
-  const InspectFirePage({
+  const InspectEyewashPage({
     super.key,
     required this.assetId,
     required this.assetName,
   });
 
   @override
-  State<InspectFirePage> createState() => _InspectFirePageState();
+  State<InspectEyewashPage> createState() => _InspectFirePageState();
 }
 
-class _InspectFirePageState extends State<InspectFirePage> {
+class _InspectFirePageState extends State<InspectEyewashPage> {
   bool isLoading = true;
   List<dynamic> checklist = [];
 
@@ -28,7 +27,7 @@ class _InspectFirePageState extends State<InspectFirePage> {
 
   /// 🔥 checklist ของถังนั้นจริง ๆ
   String get checklistApi =>
-      'https://api.jaroonrat.com/safetyaudit/api/checklist/0/${widget.assetId}';
+      'https://api.jaroonrat.com/safetyaudit/api/checklist/6/${widget.assetId}';
 
   @override
   void initState() {
@@ -116,12 +115,6 @@ class _InspectFirePageState extends State<InspectFirePage> {
           };
         }).toList();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AuditFireDetailPage(auditedAssetIds: [],),
-          ),
-        );
       } else {
         _showError('บันทึกไม่สำเร็จ (${res.statusCode})');
       }

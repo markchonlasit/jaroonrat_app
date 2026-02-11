@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '/services/auth_service.dart';
 
 class AuditFireDetailPage extends StatefulWidget {
-  const AuditFireDetailPage({super.key});
+  const AuditFireDetailPage({super.key, required List<dynamic> auditedAssetIds});
 
   @override
   State<AuditFireDetailPage> createState() => _AuditFireDetailPageState();
