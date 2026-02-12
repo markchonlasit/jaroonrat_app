@@ -8,6 +8,7 @@ import 'total_equipment_section.dart';
 import 'branch.dart';
 import '/---manage---/equipment_management.dart';
 import '/---check---/checklist.dart';
+import '/---notify--/notify.dart';
 import 'package:flutter/cupertino.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -124,6 +125,14 @@ class ActionButtonSection extends StatelessWidget {
             icon: Icons.notifications,
             bgColor: Color.fromARGB(255, 235, 227, 213),
             iconColor: Colors.orange,
+             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NotificationPage(),
+                ),
+              );
+            },
             badge: 0,
           ),
         ),

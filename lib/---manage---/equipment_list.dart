@@ -130,10 +130,10 @@ class _AssetListPageState extends State<AssetListPage> {
             /// 🔹 TEXT SUMMARY
             Expanded(
               child: Text(
-                'รายการ${widget.categoryName}ทั้งหมด\nจำนวนทั้งหมด $total',
+                'รายการ${widget.categoryName}\nจำนวนทั้งหมด $total',
                 style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -201,136 +201,158 @@ class _AssetListPageState extends State<AssetListPage> {
   /// ASSET CARD (ไม่ overflow)
   /// =========================
   Widget _assetCard(dynamic item, bool fireAsset) {
+    // ฟอร์แมตวันที่ ตัดเอาเฉพาะส่วนแรกก่อนช่องว่าง
+    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.black),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            _getIconByCategory(widget.categoryId),
-            size: 46,
-            color: _getColorByCategory(widget.categoryId),
+          /// 🔹 ส่วนที่ 1: [Icon] + JRPE + active/inactive
+          Column(
+            children: [
+              Icon(
+                _getIconByCategory(widget.categoryId),
+                size: 46,
+                color: _getColorByCategory(widget.categoryId),
+              ),
+              const SizedBox(height: 8),
+              _chip('${item['branch']}', color: Colors.blue.shade100), // JRPE
+              const SizedBox(height: 4),
+              // _chip(
+              //   item['active'] == 1 ? "active" : "inactive",
+              //   color: item['active'] == 1
+              //       ? Colors.green.shade300
+              //       : Colors.grey.shade400, // เปลี่ยนเป็นสีเทาเมื่อ inactive
+              // ),
+            ],
           ),
-          const SizedBox(width: 12),
 
-          /// =========================
-          /// CONTENT
-          /// =========================
+          const SizedBox(width: 16),
+
+          /// 🔹 ส่วนที่ 2: ข้อมูลอุปกรณ์ (ชื่อ, ประเภท, สถานที่, วันที่)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// 🔹 ชื่ออุปกรณ์ (บรรทัดที่ 1)
+                // ชื่ออุปกรณ์
                 _chip(
                   '${item['name']}',
                   color: const Color.fromARGB(255, 212, 211, 211),
                 ),
-
                 const SizedBox(height: 6),
 
-                /// 🔹 ประเภทอุปกรณ์ (บรรทัดที่ 2)
-                if (fireAsset)
+                // ประเภทอุปกรณ์ (แสดงเฉพาะเมื่อเป็น fireAsset)
+                if (fireAsset) ...[
                   _chip('ประเภท ${item['type']}', color: Colors.amber.shade200),
+                  const SizedBox(height: 8),
+                ],
 
-                const SizedBox(height: 8),
-
-                /// 🔹 LOCATION
+                // สถานที่
                 Row(
                   children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.red),
+                    const Icon(Icons.location_on, size: 20, color: Colors.red),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         item['location'] ?? '-',
-                        style: const TextStyle(fontSize: 13),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+
+                // วันที่หมดอายุ (เพิ่มเข้ามาตาม Layout ใหม่)
               ],
             ),
           ),
 
           const SizedBox(width: 8),
 
-          /// =========================
-          /// ACTION BUTTONS
-          /// =========================
+          /// 🔹 ส่วนที่ 3: ACTION BUTTONS (รายละเอียด, แก้ไข)
           Column(
             children: [
-              /// 🔹 ดูรายละเอียด
-              SizedBox(
-                width: 90,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EquipmentViewPage(assetId: item['id']),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.visibility, size: 14),
-                  label: const Text(
-                    'รายละเอียด',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 6,
+              _actionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EquipmentViewPage(assetId: item['id']),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
+                  );
+                },
+                icon: Icons.visibility,
+                label: 'รายละเอียด',
+                color: Colors.blue,
               ),
-
-              const SizedBox(height: 6),
-
-              /// 🔹 แก้ไข (Popup)
-              SizedBox(
-                width: 90,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final updated = await showEditAssetDialog(
-                      context,
-                      item['id'], // Map<String, dynamic> ของ asset
-                    );
-
-                    if (updated == true) {
-                      setState(() {
-                        // reload list หรือ FutureBuilder
-                      });
-                    }
-                  },
-
-                  icon: const Icon(Icons.edit, size: 14),
-                  label: const Text('แก้ไข', style: TextStyle(fontSize: 11)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 6,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 8),
+              _actionButton(
+                onPressed: () async {
+                  final updated = await showEditAssetDialog(
+                    context,
+                    item['id'],
+                  );
+                  if (updated == true) setState(() {});
+                },
+                icon: Icons.edit,
+                label: 'แก้ไข',
+                color: Colors.amber,
+                textColor: Colors.black,
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// Helper สำหรับสร้างปุ่ม Action ให้โค้ดสะอาดขึ้น
+  Widget _actionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required Color color,
+    Color textColor = Colors.white,
+  }) {
+    return SizedBox(
+      width: 85,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: textColor,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+           
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -342,7 +364,7 @@ class _AssetListPageState extends State<AssetListPage> {
         color: color ?? Colors.grey.shade200,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(text, style: const TextStyle(fontSize: 12)),
+      child: Text(text, style: const TextStyle(fontSize: 15)),
     );
   }
 }
