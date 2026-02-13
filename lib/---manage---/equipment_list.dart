@@ -146,8 +146,9 @@ class _AssetListPageState extends State<AssetListPage> {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
+                
                 widget.categoryName,
-                style: TextStyle(color: color, fontWeight: FontWeight.w500),
+                style: TextStyle(color: color, fontWeight: FontWeight.w500 , fontSize: 16),
               ),
             ),
           ],
@@ -202,7 +203,6 @@ class _AssetListPageState extends State<AssetListPage> {
   /// =========================
   Widget _assetCard(dynamic item, bool fireAsset) {
     // ฟอร์แมตวันที่ ตัดเอาเฉพาะส่วนแรกก่อนช่องว่าง
-    
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -258,8 +258,29 @@ class _AssetListPageState extends State<AssetListPage> {
 
                 // ประเภทอุปกรณ์ (แสดงเฉพาะเมื่อเป็น fireAsset)
                 if (fireAsset) ...[
-                  _chip('ประเภท ${item['type']}', color: Colors.amber.shade200),
-                  const SizedBox(height: 8),
+                  Builder(
+                    builder: (context) {
+                      final type = item['type']?.toString().toLowerCase();
+
+                      final Map<String, Color> typeColors = {
+                        'dry': Colors.blue.shade200,
+                        'เขียว': Colors.green.shade200,
+                        'แดง': Colors.red.shade200,
+                        'เงิน': Colors.grey.shade100,
+                      };
+
+                      final chipColor =
+                          typeColors[type] ?? Colors.grey.shade200;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _chip('ประเภท ${item['type']}', color: chipColor),
+                          const SizedBox(height: 8),
+                        ],
+                      );
+                    },
+                  ),
                 ],
 
                 // สถานที่
@@ -279,6 +300,27 @@ class _AssetListPageState extends State<AssetListPage> {
                   ],
                 ),
                 const SizedBox(height: 4),
+                if (item['expdate'] != null) ...[
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 20,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "วันหมดอายุ ${item['expdate'].toString().split(' ')[0]}",
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                ],
+
+                const SizedBox(height: 6),
 
                 // วันที่หมดอายุ (เพิ่มเข้ามาตาม Layout ใหม่)
               ],
@@ -346,7 +388,6 @@ class _AssetListPageState extends State<AssetListPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-           
             Text(
               label,
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),

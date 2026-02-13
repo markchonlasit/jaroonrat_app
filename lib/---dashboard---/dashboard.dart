@@ -10,6 +10,7 @@ import '/---manage---/equipment_management.dart';
 import '/---check---/checklist.dart';
 import '/---notify--/notify.dart';
 import 'package:flutter/cupertino.dart';
+import '/services/api_services.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -84,7 +85,7 @@ class ActionButtonSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children:  [
+      children: [
         Expanded(
           child: _ActionButton(
             label: 'จัดการอุปกรณ์',
@@ -94,9 +95,7 @@ class ActionButtonSection extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => EquipmentManagementPage(),
-                ),
+                MaterialPageRoute(builder: (_) => EquipmentManagementPage()),
               );
             },
           ),
@@ -111,29 +110,36 @@ class ActionButtonSection extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => checklistPage(),
-                ),
+                MaterialPageRoute(builder: (_) => checklistPage()),
               );
             },
           ),
         ),
         SizedBox(width: 10),
         Expanded(
-          child: _ActionButton(
-            label: 'แจ้งเตือนอุปกรณ์',
-            icon: Icons.notifications,
-            bgColor: Color.fromARGB(255, 235, 227, 213),
-            iconColor: Colors.orange,
-             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NotificationPage(),
-                ),
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: ApiService.getAlert(),
+            builder: (context, snapshot) {
+              int badgeCount = 0;
+
+              if (snapshot.hasData) {
+                badgeCount = snapshot.data?['alert'] ?? 0;
+              }
+
+              return _ActionButton(
+                label: 'แจ้งเตือนอุปกรณ์',
+                icon: Icons.notifications,
+                bgColor: const Color.fromARGB(255, 235, 227, 213),
+                iconColor: Colors.orange,
+                badge: badgeCount, // 👈 ดึงจาก API ตรงนี้เลย
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => NotificationPage()),
+                  );
+                },
               );
             },
-            badge: 0,
           ),
         ),
       ],
@@ -167,7 +173,8 @@ class _ActionButton extends StatelessWidget {
       height: 75,
       child: Stack(
         children: [
-          InkWell( // 👈 ครอบด้วย InkWell
+          InkWell(
+            // 👈 ครอบด้วย InkWell
             borderRadius: BorderRadius.circular(16),
             onTap: onTap,
             child: Container(
@@ -185,7 +192,10 @@ class _ActionButton extends StatelessWidget {
                     Text(
                       label,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12 , fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),

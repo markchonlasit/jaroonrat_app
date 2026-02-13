@@ -125,15 +125,14 @@ Future<bool?> showEditAssetDialog(
                       if (fireTypeNotifier != null)
                         ValueListenableBuilder<String>(
                           valueListenable: fireTypeNotifier,
-                          builder: (_, currentType, __) {
+                          builder: (context, currentType, _) {
                             return _customRowField(
                               icon: Icons.build_circle,
                               label: 'ประเภทอุปกรณ์ :',
                               child: DropdownButtonFormField<String>(
-                                value: currentType,
+                                initialValue: currentType,
                                 isExpanded: true,
-                                decoration:
-                                    _innerInputDecoration(hasIcon: true),
+                                decoration: _innerInputDecoration(hasIcon: true),
                                 items: fireTypeItems
                                     .map(
                                       (e) => DropdownMenuItem(
@@ -182,24 +181,24 @@ Future<bool?> showEditAssetDialog(
                             icon: Icons.edit,
                             color: const Color(0xFFFFC107),
                             onPressed: () async {
+                              final navigator = Navigator.of(context);
+
                               final data = {
                                 'name': nameCtrl.text,
                                 'location': locationCtrl.text,
                               };
 
                               if (fireTypeNotifier != null) {
-                                data['firetype'] =
-                                    fireTypeNotifier.value;
+                                data['firetype'] = fireTypeNotifier.value;
                               }
 
-                              final success =
-                                  await ApiService.updateAsset(
+                              final success = await ApiService.updateAsset(
                                 assetId,
                                 data,
                               );
 
-                              if (success) {
-                                Navigator.pop(context, true);
+                              if (success && navigator.mounted) {
+                                navigator.pop(true);
                               }
                             },
                           ),
