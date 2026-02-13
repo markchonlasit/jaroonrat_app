@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '/services/auth_service.dart';
 import '/---Inspect---/inspectsand.dart';
+import '/---audit---/audit_sand_detil.dart';
 
 class SandPage extends StatefulWidget {
   const SandPage({super.key});
@@ -111,6 +112,21 @@ class _SandPageState extends State<SandPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+         actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AuditSandDetailPage(
+                    auditedAssetIds: [],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
 
       body: isLoading

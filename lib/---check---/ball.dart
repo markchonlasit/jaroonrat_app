@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '/services/auth_service.dart';
 import '/---Inspect---/inspectball.dart';
+import '/---audit---/audit_ball_detail.dart';
 
 class BallPage extends StatefulWidget {
   const BallPage({super.key});
@@ -124,6 +125,21 @@ class _BallPageState extends State<BallPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AuditBallDetailPage(
+                    auditedAssetIds: [],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

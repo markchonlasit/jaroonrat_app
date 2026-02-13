@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '/services/auth_service.dart';
 import '/---Inspect---/inspectfhc.dart';
+import '/---audit---/audit_fhc_detail.dart';
 
 class FhcPage extends StatefulWidget {
   const FhcPage({super.key});
@@ -103,6 +104,21 @@ class _FhcPageState extends State<FhcPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AuditFhcDetailPage(
+                    auditedAssetIds: [],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

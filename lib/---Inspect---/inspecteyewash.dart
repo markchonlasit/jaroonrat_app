@@ -161,6 +161,11 @@ class _InspectFirePageState extends State<InspectEyewashPage> {
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         backgroundColor: Colors.red,
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
         title: Text(widget.assetName),
       ),
       body: isLoading

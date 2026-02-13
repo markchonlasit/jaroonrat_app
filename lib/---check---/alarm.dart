@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '/services/auth_service.dart';
 import '/---Inspect---/inspectalarm.dart';
+import '/---audit---/audit_alarm_detail.dart';
 
 class AlarmPage extends StatefulWidget {
   const AlarmPage({super.key});
@@ -113,6 +114,21 @@ class _AlarmPageState extends State<AlarmPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AuditAlarmDetailPage(
+                    auditedAssetIds: [],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
 
       body: isLoading

@@ -5,19 +5,19 @@ import 'package:intl/intl.dart';
 
 import '/services/auth_service.dart';
 
-class AuditFireDetailPage extends StatefulWidget {
-  const AuditFireDetailPage({super.key, required List<dynamic> auditedAssetIds});
+class AuditLightDetailPage extends StatefulWidget {
+  const AuditLightDetailPage({super.key, required List<dynamic> auditedAssetIds});
 
   @override
-  State<AuditFireDetailPage> createState() => _AuditFireDetailPageState();
+  State<AuditLightDetailPage> createState() => _AuditFireDetailPageState();
 }
 
-class _AuditFireDetailPageState extends State<AuditFireDetailPage> {
+class _AuditFireDetailPageState extends State<AuditLightDetailPage> {
   bool isLoading = true;
   List assetList = [];
 
   final String apiUrl =
-      'https://api.jaroonrat.com/safetyaudit/api/audit/0';
+      'https://api.jaroonrat.com/safetyaudit/api/audit/7';
 
   @override
   void initState() {
@@ -64,9 +64,9 @@ class _AuditFireDetailPageState extends State<AuditFireDetailPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: const Color(0xFF4CAF50),
         title: const Text(
-          'รายการถังดับเพลิงที่ตรวจสอบแล้ว',
+          'รายการไฟฉุกเฉินที่ตรวจสอบแล้ว',
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,

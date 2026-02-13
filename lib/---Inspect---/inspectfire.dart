@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:file_picker/file_picker.dart';
 import '/services/auth_service.dart';
-import '/---audit---/audit_fire_detail.dart';
 
 class InspectFirePage extends StatefulWidget {
   final int assetId;
@@ -22,11 +21,10 @@ class InspectFirePage extends StatefulWidget {
 class _InspectFirePageState extends State<InspectFirePage> {
   bool isLoading = true;
   List<dynamic> checklist = [];
-
-  /// checklistId -> true(ผ่าน) / false(ไม่ผ่าน)
   final Map<int, bool> selectedResult = {};
 
-  /// 🔥 checklist ของถังนั้นจริง ๆ
+  PlatformFile? selectedImage;
+
   String get checklistApi =>
       'https://api.jaroonrat.com/safetyaudit/api/checklist/0/${widget.assetId}';
 
@@ -36,11 +34,9 @@ class _InspectFirePageState extends State<InspectFirePage> {
     fetchChecklist();
   }
 
-  /// 🔽 โหลด checklist ตาม assetId
+  /// โหลด checklist
   Future<void> fetchChecklist() async {
     try {
-      setState(() => isLoading = true);
-
       final res = await http.get(
         Uri.parse(checklistApi),
         headers: {
@@ -54,76 +50,86 @@ class _InspectFirePageState extends State<InspectFirePage> {
           isLoading = false;
         });
       } else {
-        isLoading = false;
         _showError('โหลด checklist ไม่สำเร็จ (${res.statusCode})');
       }
     } catch (e) {
-      isLoading = false;
       _showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
     }
   }
 
-  /// 🔥 ส่งข้อมูลตรวจสอบ
+  /// เลือกรูป (เปิด file explorer / gallery)
+ Future<void> pickImage() async {
+  FilePickerResult? result = await FilePicker.platform.pickFiles(
+    type: FileType.image,
+    withData: true,   // ต้องมีอันนี้
+  );
+
+  if (result != null) {
+    print("เลือกรูปแล้ว: ${result.files.first.name}");
+    setState(() {
+      selectedImage = result.files.first;
+    });
+  } else {
+    print("ผู้ใช้ยกเลิก");
+  }
+}
+
+
+  /// ส่งข้อมูล
   Future<void> submitAudit() async {
     if (selectedResult.length != checklist.length) {
       _showError('กรุณาตรวจสอบให้ครบทุกข้อ');
       return;
     }
 
-    /// ✅ PAYLOAD ตรง backend (Postman)
-    final payload = {
-      "assetid": widget.assetId,
-      "remark": "ทดสอบ",
-      "ans": checklist.map((item) {
-        final int id = item['id'];
-        final bool isPass = selectedResult[id] ?? false;
+    var uri = Uri.parse(
+        'https://api.jaroonrat.com/safetyaudit/api/uploadpicture');
 
+    var request = http.MultipartRequest("POST", uri);
+
+    request.headers['Authorization'] = 'Bearer ${AuthService.token}';
+
+    request.fields['assetid'] = widget.assetId.toString();
+    request.fields['remark'] = "ตรวจจากแอป";
+
+    request.fields['ans'] = jsonEncode(
+      checklist.map((item) {
+        final id = item['id'];
         return {
           "id": id,
-          "status": isPass ? 1 : 2, // 1 = ผ่าน, 2 = ไม่ผ่าน
+          "status": selectedResult[id]! ? 1 : 2,
         };
       }).toList(),
-    };
+    );
 
-    debugPrint('📦 PAYLOAD => ${jsonEncode(payload)}');
+    /// แนบรูป
+    if (selectedImage != null && selectedImage!.bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'picture', // ⚠️ ถ้า 500 ลองเปลี่ยนเป็น 'file'
+          selectedImage!.bytes!,
+          filename: selectedImage!.name,
+        ),
+      );
+    }
 
     try {
-      final res = await http.post(
-        Uri.parse(
-          'https://api.jaroonrat.com/safetyaudit/api/submitaudit',
-        ),
-        headers: {
-          'Authorization': 'Bearer ${AuthService.token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(payload),
-      );
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
 
-      debugPrint('STATUS => ${res.statusCode}');
-      debugPrint('BODY => ${res.body}');
+      print("STATUS => ${response.statusCode}");
+      print("BODY => $responseBody");
 
-      if (res.statusCode == 200) {
+      if (response.statusCode == 200) {
         if (!mounted) return;
 
-        /// 📋 เตรียมข้อมูลไปหน้า detail
-        final detailResult = checklist.map<Map<String, dynamic>>((item) {
-          final int id = item['id'];
-          return {
-            "name": item['name'],
-            "answer": selectedResult[id]!
-                ? item['detail_Y']
-                : item['detail_N'],
-          };
-        }).toList();
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AuditFireDetailPage(auditedAssetIds: [],),
-          ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('บันทึกสำเร็จ')),
         );
+
+        Navigator.pop(context);
       } else {
-        _showError('บันทึกไม่สำเร็จ (${res.statusCode})');
+        _showError('บันทึกไม่สำเร็จ (${response.statusCode})');
       }
     } catch (e) {
       _showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
@@ -136,39 +142,16 @@ class _InspectFirePageState extends State<InspectFirePage> {
         .showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  void _confirmCancel() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('ยืนยันการยกเลิก'),
-        content: const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ไม่ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'ยกเลิก',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         backgroundColor: Colors.red,
-        title: Text(widget.assetName),
+        title: Text(
+          widget.assetName,
+          style: const TextStyle(color: Colors.white),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -202,48 +185,28 @@ class _InspectFirePageState extends State<InspectFirePage> {
                             Text(
                               item['name'],
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
+                                  fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 10),
-
-                            /// ✅ ผ่าน
-                            InkWell(
-                              onTap: () =>
-                                  setState(() => selectedResult[id] = true),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    selectedResult[id] == true
-                                        ? Icons.check_circle
-                                        : Icons.radio_button_unchecked,
-                                    color: Colors.green,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(item['detail_Y']),
-                                ],
-                              ),
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: selectedResult[id] == true,
+                                  onChanged: (_) =>
+                                      setState(() => selectedResult[id] = true),
+                                ),
+                                Text(item['detail_Y']),
+                              ],
                             ),
-
-                            const SizedBox(height: 8),
-
-                            /// ❌ ไม่ผ่าน
-                            InkWell(
-                              onTap: () =>
-                                  setState(() => selectedResult[id] = false),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    selectedResult[id] == false
-                                        ? Icons.cancel
-                                        : Icons.radio_button_unchecked,
-                                    color: Colors.red,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(item['detail_N']),
-                                ],
-                              ),
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: selectedResult[id] == false,
+                                  onChanged: (_) => setState(
+                                      () => selectedResult[id] = false),
+                                ),
+                                Text(item['detail_N']),
+                              ],
                             ),
                           ],
                         ),
@@ -252,28 +215,50 @@ class _InspectFirePageState extends State<InspectFirePage> {
                   ),
                 ),
 
-                /// 🔘 ปุ่มล่าง
+                /// ปุ่มเลือกรูป (UI เดิม)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "แนบรูปภาพประกอบ",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: pickImage,
+                        icon: const Icon(Icons.photo),
+                        label: const Text("เลือกรูป"),
+                      ),
+                      const SizedBox(height: 10),
+
+                      if (selectedImage != null &&
+                          selectedImage!.bytes != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            selectedImage!.bytes!,
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _confirmCancel,
-                          child: const Text('ยกเลิก'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: submitAudit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
-                          child: const Text('บันทึก'),
-                        ),
-                      ),
-                    ],
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: submitAudit,
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red),
+                      child: const Text('บันทึก'),
+                    ),
                   ),
                 ),
               ],

@@ -1,7 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:image_picker/image_picker.dart';
 import '/services/auth_service.dart';
 
 
@@ -25,6 +26,9 @@ class _InspectFirePageState extends State<InspectBallPage> {
 
   /// checklistId -> true(ผ่าน) / false(ไม่ผ่าน)
   final Map<int, bool> selectedResult = {};
+
+  File? selectedImage;
+  final ImagePicker _picker = ImagePicker();
 
   /// 🔥 checklist ของถังนั้นจริง ๆ
   String get checklistApi =>
@@ -124,6 +128,18 @@ class _InspectFirePageState extends State<InspectBallPage> {
     }
   }
 
+  /// 📷 เลือกหรือถ่ายรูป
+  Future<void> pickImage(ImageSource source) async {
+    final XFile? image = await _picker.pickImage(
+        source: source, imageQuality: 70, maxWidth: 1200);
+
+    if (image != null) {
+      setState(() {
+        selectedImage = File(image.path);
+      });
+    }
+  }
+
   void _showError(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -161,8 +177,13 @@ class _InspectFirePageState extends State<InspectBallPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        backgroundColor: Colors.red,
-        title: Text(widget.assetName),
+        backgroundColor: const Color.fromARGB(255, 5, 47, 233),
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        title: Text(widget.assetName,)
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -246,6 +267,51 @@ class _InspectFirePageState extends State<InspectBallPage> {
                   ),
                 ),
 
+/// 📷 ปุ่มเลือก/ถ่ายรูป
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "แนบรูปภาพประกอบ",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                pickImage(ImageSource.camera),
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text("ถ่ายรูป"),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                pickImage(ImageSource.gallery),
+                            icon: const Icon(Icons.photo),
+                            label: const Text("เลือกรูป"),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      /// แสดงรูปที่เลือก
+                      if (selectedImage != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            selectedImage!,
+                            width: double.infinity,
+                            height: 180,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
                 /// 🔘 ปุ่มล่าง
                 Padding(
                   padding: const EdgeInsets.all(16),

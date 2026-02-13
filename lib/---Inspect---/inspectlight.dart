@@ -162,6 +162,11 @@ class _InspectFirePageState extends State<InspectLightPage> {
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         backgroundColor: Colors.red,
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
         title: Text(widget.assetName),
       ),
       body: isLoading

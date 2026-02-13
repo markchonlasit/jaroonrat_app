@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '/services/auth_service.dart';
 import '/---Inspect---/inspecteyewash.dart';
+import '/---audit---/audit_eyewash_detail.dart';
 
 class EyewashPage extends StatefulWidget {
   const EyewashPage({super.key});
@@ -108,6 +109,21 @@ class _EyewashPageState extends State<EyewashPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AuditEyewashDetailPage(
+                    auditedAssetIds: [],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
 
       body: isLoading

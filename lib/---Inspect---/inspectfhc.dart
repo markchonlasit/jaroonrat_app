@@ -160,7 +160,12 @@ class _InspectFirePageState extends State<InspectfhcPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: const Color.fromARGB(255, 255, 110, 64),
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
         title: Text(widget.assetName),
       ),
       body: isLoading

@@ -27,13 +27,13 @@ Future<void> _loadBranch() async {
 
     setState(() {
       branchName = branch.isNotEmpty
-          ? 'บริษัท จรุญรัตน์ โปรดักส์ จำกัด \n$branch'
-          : 'บริษัท จรุญรัตน์ โปรดักส์ จำกัด';
+          ? 'บริษัท จรูญรัตน์ โปรดักส์ จำกัด \n$branch'
+          : 'บริษัท จรูญรัตน์ โปรดักส์ จำกัด';
       loading = false;
     });
   } catch (e) {
     setState(() {
-      branchName = 'บริษัท จรุญรัตน์ โปรดักส์ จำกัด';
+      branchName = 'บริษัท จรูญรัตน์ โปรดักส์ จำกัด';
       loading = false;
     });
   }

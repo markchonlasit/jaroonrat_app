@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '/services/auth_service.dart';
 import '/---Inspect---/inspectlight.dart';
+import '/---audit---/audit_light_detail.dart';
 
 class LightPage extends StatefulWidget {
   const LightPage({super.key});
@@ -114,6 +115,21 @@ class _LightPageState extends State<LightPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AuditLightDetailPage(
+                    auditedAssetIds: [],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
 
       body: isLoading
