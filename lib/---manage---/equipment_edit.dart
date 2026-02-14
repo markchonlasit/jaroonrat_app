@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
 
-Future<bool?> showEditAssetDialog(
-  BuildContext context,
-  int assetId,
-) {
+Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -15,7 +12,7 @@ Future<bool?> showEditAssetDialog(
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const AlertDialog(
               content: SizedBox(
-                height: 80,
+                height: 100,
                 child: Center(child: CircularProgressIndicator()),
               ),
             );
@@ -38,10 +35,10 @@ Future<bool?> showEditAssetDialog(
           /// =========================
           /// CONTROLLERS
           /// =========================
-          final nameCtrl =
-              TextEditingController(text: asset['name'] ?? '');
-          final locationCtrl =
-              TextEditingController(text: asset['location'] ?? '');
+          final nameCtrl = TextEditingController(text: asset['name'] ?? '');
+          final locationCtrl = TextEditingController(
+            text: asset['location'] ?? '',
+          );
 
           final String categoryName =
               asset['categoryname']?.toString().trim() ?? '';
@@ -79,18 +76,25 @@ Future<bool?> showEditAssetDialog(
             ),
             backgroundColor: Colors.white,
             contentPadding: EdgeInsets.zero,
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 24,
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 /// HEADER
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: const BoxDecoration(
                     color: Color(0xFFFFC107),
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(14)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(14),
+                    ),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -100,7 +104,9 @@ Future<bool?> showEditAssetDialog(
                       Text(
                         'แก้ไขอุปกรณ์',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ],
                   ),
@@ -110,6 +116,32 @@ Future<bool?> showEditAssetDialog(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      /// BRANCH (read-only)
+                      _customRowField(
+                        icon: Icons.apartment,
+                        label: 'สาขา :',
+                        child: Container(
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.black),
+                          ),
+                          child: Text(
+                            asset['branch'] ?? '-',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+
                       /// NAME
                       _customRowField(
                         icon: Icons.h_mobiledata,
@@ -132,7 +164,9 @@ Future<bool?> showEditAssetDialog(
                               child: DropdownButtonFormField<String>(
                                 initialValue: currentType,
                                 isExpanded: true,
-                                decoration: _innerInputDecoration(hasIcon: true),
+                                decoration: _innerInputDecoration(
+                                  hasIcon: true,
+                                ),
                                 items: fireTypeItems
                                     .map(
                                       (e) => DropdownMenuItem(
@@ -166,15 +200,19 @@ Future<bool?> showEditAssetDialog(
 
                       /// ACTIONS
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          _actionButton(
+                            label: 'ประวัติ',
+                            icon: Icons.history,
+                            color: Colors.blue.shade300,
+                            onPressed: () => Navigator.pop(context, false),
+                          ),
                           _actionButton(
                             label: 'ยกเลิก',
                             icon: Icons.close,
                             color: Colors.grey.shade300,
-                            onPressed: () =>
-                                Navigator.pop(context, false),
+                            onPressed: () => Navigator.pop(context, false),
                           ),
                           _actionButton(
                             label: 'แก้ไข',
@@ -216,7 +254,6 @@ Future<bool?> showEditAssetDialog(
   );
 }
 
-
 /// =======================================================
 /// ROW FIELD
 /// =======================================================
@@ -224,6 +261,7 @@ Widget _customRowField({
   required IconData icon,
   required String label,
   required Widget child,
+  double fontSize = 18,
 }) {
   return Container(
     margin: const EdgeInsets.only(bottom: 12),
@@ -237,7 +275,10 @@ Widget _customRowField({
       children: [
         Icon(icon, color: Colors.blue.shade600, size: 30),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize),
+        ),
         const SizedBox(width: 10),
         Expanded(child: SizedBox(height: 35, child: child)),
       ],
@@ -252,12 +293,18 @@ InputDecoration _innerInputDecoration({bool hasIcon = false}) {
   return InputDecoration(
     filled: true,
     fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     prefixIcon: hasIcon
         ? const Icon(Icons.build_circle_outlined, size: 18)
         : null,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.black),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.black),
+    ),
   );
 }
 

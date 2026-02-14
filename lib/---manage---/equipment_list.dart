@@ -123,32 +123,54 @@ class _AssetListPageState extends State<AssetListPage> {
         child: Row(
           children: [
             /// 🔹 ICON ตามประเภทอุปกรณ์
-            Icon(icon, size: 36, color: color),
-
-            const SizedBox(width: 12),
 
             /// 🔹 TEXT SUMMARY
             Expanded(
-              child: Text(
-                'รายการ${widget.categoryName}\nจำนวนทั้งหมด $total',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'รายการ${widget.categoryName}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'จำนวนทั้งหมด $total',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            /// 🔹 CATEGORY TAG
+            /// 🔹 CATEGORY TAG (pill with icon + label)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: color),
-                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: color, width: 2),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
               ),
-              child: Text(
-                
-                widget.categoryName,
-                style: TextStyle(color: color, fontWeight: FontWeight.w500 , fontSize: 16),
+              child: Row(
+              
+                children: [
+                  Icon(icon, size: 30, color: color),
+                  const SizedBox(width: 12),
+                  Text(
+                    widget.categoryName,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -266,7 +288,7 @@ class _AssetListPageState extends State<AssetListPage> {
                         'dry': Colors.blue.shade200,
                         'เขียว': Colors.green.shade200,
                         'แดง': Colors.red.shade200,
-                        'เงิน': Colors.grey.shade100,
+                        'เงิน': Colors.grey.shade400,
                       };
 
                       final chipColor =
@@ -300,6 +322,7 @@ class _AssetListPageState extends State<AssetListPage> {
                   ],
                 ),
                 const SizedBox(height: 4),
+
                 if (item['expdate'] != null) ...[
                   Row(
                     children: [
@@ -319,7 +342,6 @@ class _AssetListPageState extends State<AssetListPage> {
                   ),
                   const SizedBox(height: 6),
                 ],
-
                 const SizedBox(height: 6),
 
                 // วันที่หมดอายุ (เพิ่มเข้ามาตาม Layout ใหม่)
