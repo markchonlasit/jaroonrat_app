@@ -68,9 +68,19 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                   : fireTypeItems.first,
             );
           }
-          final expDateCtrl = TextEditingController(
-            text: asset['expdate'] ?? '',
-          );
+          String formattedExpDate = '';
+
+          if (asset['expdate'] != null &&
+              asset['expdate'].toString().isNotEmpty) {
+            try {
+              final parsedDate = DateTime.parse(asset['expdate']);
+              formattedExpDate = DateFormat('dd-MM-yyyy').format(parsedDate);
+            } catch (e) {
+              formattedExpDate = asset['expdate'].toString().split(' ').first;
+            }
+          }
+
+          final expDateCtrl = TextEditingController(text: formattedExpDate);
 
           ValueNotifier<int> activeNotifier = ValueNotifier<int>(
             asset['active'] == 0 ? 0 : 1,
@@ -232,9 +242,15 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                             );
 
                             if (pickedDate != null) {
-                              expDateCtrl.text = DateFormat(
-                                'dd-MM-yyyy',
-                              ).format(pickedDate);
+                              final thaiYear = pickedDate.year + 543;
+                              final dayStr = pickedDate.day.toString().padLeft(
+                                2,
+                                '0',
+                              );
+                              final monthStr = pickedDate.month
+                                  .toString()
+                                  .padLeft(2, '0');
+                              expDateCtrl.text = '$dayStr-$monthStr-$thaiYear';
                             }
                           },
                         ),
@@ -251,7 +267,7 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                               width: 130, // 👈 ทำให้เล็กลง
                               height: 35,
                               child: DropdownButtonFormField<int>(
-                                value: currentStatus,
+                                initialValue: currentStatus,
                                 isExpanded: true,
                                 decoration: _innerInputDecoration(
                                   hasIcon: false,
@@ -403,10 +419,7 @@ Widget _customRowField({
           width: 110, // 👈 ล็อกความกว้าง label ให้เท่ากันทุกแถว
           child: Text(
             label,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: fontSize,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize),
           ),
         ),
         const SizedBox(width: 10),
@@ -422,6 +435,7 @@ Widget _customRowField({
     ),
   );
 }
+
 /// =======================================================
 /// INPUT DECORATION
 /// =======================================================

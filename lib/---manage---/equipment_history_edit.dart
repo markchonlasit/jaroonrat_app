@@ -247,11 +247,21 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
       );
     }
 
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -288,10 +298,7 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
                     const SizedBox(width: 6),
                     Text(
                       created,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Colors.black,
-                      ),
+                      style: const TextStyle(fontSize: 15, color: Colors.black),
                     ),
                   ],
                 ),
