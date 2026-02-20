@@ -85,9 +85,9 @@ class ApiService {
   }
 
  // Asset History(id)
-  static Future<Map<String, dynamic>> getAssetHistory(int id) async {
-    final res = await ApiClient.get('/api/asset/logs/$id');
-    return jsonDecode(res.body);
-  }
+  static Future<List<dynamic>> getAssetHistory(int id) async {
+  final res = await ApiClient.get('/api/asset/logs/$id');
+  return jsonDecode(res.body);
+}
 
 }

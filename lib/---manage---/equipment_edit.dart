@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
 import 'package:intl/intl.dart';
+import '/utils/app_alert.dart';
+import 'equipment_history_edit.dart';
 
 Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
   return showDialog<bool>(
@@ -168,7 +170,7 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                           builder: (context, currentType, _) {
                             return _customRowField(
                               icon: Icons.build_circle,
-                              label: 'ประเภทอุปกรณ์ :',
+                              label: 'ประเภท :',
                               child: DropdownButtonFormField<String>(
                                 initialValue: currentType,
                                 isExpanded: true,
@@ -284,7 +286,16 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                             label: 'ประวัติ',
                             icon: Icons.history,
                             color: Colors.blue.shade300,
-                            onPressed: () => Navigator.pop(context, false),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AssetHistoryPage(
+                                    assetId: assetId, // 🔥 ต้องมี id ของอุปกรณ์
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                           _actionButton(
                             label: 'ยกเลิก',
@@ -299,25 +310,57 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                             onPressed: () async {
                               final navigator = Navigator.of(context);
 
-                              final data = {
-                                'name': nameCtrl.text,
-                                'location': locationCtrl.text,
-                                'active': activeNotifier.value,
-                                'expdate': expDateCtrl.text,
-                              };
+                              AppAlert.successConfirm(
+                                context,
+                                "คุณต้องการแก้ไขข้อมูลอุปกรณ์นี้หรือไม่?",
+                                onConfirm: () async {
+                                  final data = {
+                                    'name': nameCtrl.text,
+                                    'location': locationCtrl.text,
+                                    'active': activeNotifier.value,
+                                    'expdate': expDateCtrl.text,
+                                  };
 
-                              if (fireTypeNotifier != null) {
-                                data['firetype'] = fireTypeNotifier.value;
-                              }
+                                  if (fireTypeNotifier != null) {
+                                    data['firetype'] = fireTypeNotifier.value;
+                                  }
 
-                              final success = await ApiService.updateAsset(
-                                assetId,
-                                data,
+                                  // 🔄 แสดง Loading
+                                  AppAlert.loading(context);
+
+                                  final success = await ApiService.updateAsset(
+                                    assetId,
+                                    data,
+                                  );
+
+                                  if (!context.mounted) return;
+
+                                  AppAlert.close(context); // ปิด loading
+
+                                  if (success) {
+                                    // ✅ แสดง success 1 วิ
+                                    AppAlert.success(
+                                      context,
+                                      "แก้ไขข้อมูลสำเร็จ",
+                                    );
+
+                                    // ⏳ รอ 1 วินาทีแล้วค่อย pop
+                                    Future.delayed(
+                                      const Duration(seconds: 1),
+                                      () {
+                                        if (context.mounted) {
+                                          navigator.pop(true);
+                                        }
+                                      },
+                                    );
+                                  } else {
+                                    AppAlert.error(
+                                      context,
+                                      "ไม่สามารถแก้ไขข้อมูลได้",
+                                    );
+                                  }
+                                },
                               );
-
-                              if (success && navigator.mounted) {
-                                navigator.pop(true);
-                              }
                             },
                           ),
                         ],
@@ -341,9 +384,10 @@ Widget _customRowField({
   required IconData icon,
   required String label,
   required Widget child,
-  double fontSize = 18,
+  double fontSize = 16,
 }) {
   return Container(
+    width: double.infinity, // 👈 ให้เต็มความกว้าง
     margin: const EdgeInsets.only(bottom: 12),
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     decoration: BoxDecoration(
@@ -353,19 +397,31 @@ Widget _customRowField({
     ),
     child: Row(
       children: [
-        Icon(icon, color: Colors.blue.shade600, size: 30),
+        Icon(icon, color: Colors.blue.shade600, size: 26),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize),
+        SizedBox(
+          width: 110, // 👈 ล็อกความกว้าง label ให้เท่ากันทุกแถว
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: fontSize,
+            ),
+          ),
         ),
         const SizedBox(width: 10),
-        Expanded(child: SizedBox(height: 35, child: child)),
+
+        /// 🔥 ช่องกรอกข้อมูล
+        Expanded(
+          child: SizedBox(
+            height: 42, // 👈 ความสูงมาตรฐานเดียวกัน
+            child: child,
+          ),
+        ),
       ],
     ),
   );
 }
-
 /// =======================================================
 /// INPUT DECORATION
 /// =======================================================
