@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/services/api_services.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class EquipmentSection extends StatefulWidget {
   const EquipmentSection({super.key});
@@ -27,13 +28,24 @@ class _EquipmentSectionState extends State<EquipmentSection> {
   void initState() {
     super.initState();
 
-    /// ✅ default = เดือนปีปัจจุบัน
+    initializeDateFormatting('th_TH');
+
     final now = DateTime.now();
     selectedMonth = int.parse(
       "${now.year}${now.month.toString().padLeft(2, '0')}",
     );
 
     _fetchInitialData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final now = DateTime.now();
+    selectedMonth = int.parse(
+      "${now.year}${now.month.toString().padLeft(2, '0')}",
+    );
   }
 
   Future<void> _fetchInitialData() async {
@@ -78,13 +90,13 @@ class _EquipmentSectionState extends State<EquipmentSection> {
 
     final picked = await showMonthPicker(
       context: context,
+
       initialDate: DateTime(initialYear, initialMonth),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
 
     if (picked != null) {
-      /// ✅ แปลงเป็น yyyyMM เช่น Nov 2025 -> 202511
       final formatted = int.parse(
         "${picked.year}${picked.month.toString().padLeft(2, '0')}",
       );
@@ -102,7 +114,7 @@ class _EquipmentSectionState extends State<EquipmentSection> {
     final month = int.parse(value.toString().substring(4));
     final date = DateTime(year, month);
 
-    return DateFormat.yMMMM('en_US').format(date);
+    return DateFormat.yMMMM('th_TH').format(date); // ✅ เปลี่ยนตรงนี้
   }
 
   @override
@@ -167,7 +179,6 @@ class _EquipmentSectionState extends State<EquipmentSection> {
                       ),
                       child: Row(
                         children: [
-                        
                           Expanded(
                             child: Text(
                               _formatDisplayMonth(selectedMonth),
