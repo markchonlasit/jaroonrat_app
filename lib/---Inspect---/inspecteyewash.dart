@@ -92,6 +92,32 @@ class _InspectEyewashPageState extends State<InspectEyewashPage> {
   void _showError(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
+  void _confirmCancel() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ยืนยันการยกเลิก'),
+        content: const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ไม่ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'ยกเลิก',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return _buildUI();
@@ -120,7 +146,7 @@ class _InspectEyewashPageState extends State<InspectEyewashPage> {
                   ],
                 ),
               ),
-              _submitButton()
+              _bottomButtons()
             ]),
     );
   }
@@ -179,15 +205,33 @@ class _InspectEyewashPageState extends State<InspectEyewashPage> {
     );
   }
 
-  Widget _submitButton() {
+   Widget _bottomButtons() {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: ElevatedButton(
-        onPressed: submitAudit,
-        style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            minimumSize: const Size.fromHeight(50)),
-        child: const Text('บันทึก'),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _confirmCancel,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+                minimumSize: const Size.fromHeight(50),
+              ),
+              child: const Text('ยกเลิก'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: submitAudit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                minimumSize: const Size.fromHeight(50),
+              ),
+              child: const Text('บันทึก'),
+            ),
+          ),
+        ],
       ),
     );
   }
