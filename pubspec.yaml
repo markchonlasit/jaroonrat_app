@@ -28,7 +28,11 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+
   flutter:
+    sdk: flutter
+
+  flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
   file_picker: ^8.0.0
@@ -40,7 +44,9 @@ dependencies:
   http: ^1.2.0
   awesome_dialog: ^3.3.0
   month_picker_dialog: 6.7.1
+
   image_picker: ^1.0.4
+  quickalert: ^1.1.0
 
 
 dev_dependencies:

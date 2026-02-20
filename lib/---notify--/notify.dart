@@ -127,13 +127,32 @@ class _NotificationPageState extends State<NotificationPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _statusBox(
-                  "ใกล้หมดอายุ",
-                  countStatus("ใกล้หมดอายุ"),
-                  Colors.orange,
+                Expanded(
+                  child: _statusBoxWithIcon(
+                    "ใกล้หมด",
+                    countStatus("ใกล้หมด"),
+                    Colors.orange,
+                    Icons.warning_amber,
+                  ),
                 ),
-                _statusBox("ใช้งานได้", countStatus("ใช้งานได้"), Colors.green),
-                _statusBox("หมดอายุ", countStatus("หมดอายุ"), Colors.red),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _statusBoxWithIcon(
+                    "ใช้งานได้",
+                    countStatus("ใช้งานได้"),
+                    Colors.green,
+                    Icons.check_circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _statusBoxWithIcon(
+                    "หมดอายุ",
+                    countStatus("หมดอายุ"),
+                    Colors.red,
+                    Icons.error,
+                  ),
+                ),
               ],
             ),
           ),
@@ -211,10 +230,36 @@ class _NotificationPageState extends State<NotificationPage> {
                               color: const Color.fromARGB(255, 212, 211, 211),
                             ),
                             const SizedBox(height: 6),
-                            _chip(
-                              'ประเภท ${item['type']}',
-                              color: Colors.amber.shade200,
+
+                            Builder(
+                              builder: (context) {
+                                final type = item['type']
+                                    ?.toString()
+                                    .toLowerCase();
+
+                                final Map<String, Color> typeColors = {
+                                  'dry': Colors.blue.shade200,
+                                  'เขียว': Colors.green.shade200,
+                                  'แดง': Colors.red.shade200,
+                                  'เงิน': Colors.grey.shade400,
+                                };
+
+                                final chipColor =
+                                    typeColors[type] ?? Colors.grey.shade200;
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _chip(
+                                      'ประเภท ${item['type']}',
+                                      color: chipColor,
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                );
+                              },
                             ),
+
                             const SizedBox(height: 6),
 
                             Row(
@@ -264,7 +309,7 @@ class _NotificationPageState extends State<NotificationPage> {
                         decoration: BoxDecoration(
                           color: status == "หมดอายุ"
                               ? Colors.red
-                              : status == "ใกล้หมดอายุ"
+                              : status == "ใกล้หมด"
                               ? Colors.orange
                               : Colors.green,
                           borderRadius: BorderRadius.circular(20),
@@ -285,30 +330,6 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Widget _statusBox(String title, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Text(title),
-          const SizedBox(height: 6),
-          Text(
-            count.toString(),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _chip(String text, {Color? color}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -317,6 +338,52 @@ class _NotificationPageState extends State<NotificationPage> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(text, style: const TextStyle(fontSize: 15)),
+    );
+  }
+
+  Widget _statusBoxWithIcon(
+    String title,
+    int count,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+        color: Colors.white,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$count',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

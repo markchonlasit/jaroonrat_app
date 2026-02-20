@@ -135,6 +135,7 @@ Widget _titleBar(String text) {
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
       ],
@@ -175,7 +176,7 @@ Widget infoField({
           flex: 4,
           child: Text(
             '$label :',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
 
@@ -192,7 +193,7 @@ Widget infoField({
             child: Text(
               value,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
         ),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
+import 'package:intl/intl.dart';
+import '/utils/app_alert.dart';
+import 'equipment_history_edit.dart';
 
-Future<bool?> showEditAssetDialog(
-  BuildContext context,
-  int assetId,
-) {
+Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -15,7 +15,7 @@ Future<bool?> showEditAssetDialog(
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const AlertDialog(
               content: SizedBox(
-                height: 80,
+                height: 100,
                 child: Center(child: CircularProgressIndicator()),
               ),
             );
@@ -38,10 +38,10 @@ Future<bool?> showEditAssetDialog(
           /// =========================
           /// CONTROLLERS
           /// =========================
-          final nameCtrl =
-              TextEditingController(text: asset['name'] ?? '');
-          final locationCtrl =
-              TextEditingController(text: asset['location'] ?? '');
+          final nameCtrl = TextEditingController(text: asset['name'] ?? '');
+          final locationCtrl = TextEditingController(
+            text: asset['location'] ?? '',
+          );
 
           final String categoryName =
               asset['categoryname']?.toString().trim() ?? '';
@@ -68,6 +68,23 @@ Future<bool?> showEditAssetDialog(
                   : fireTypeItems.first,
             );
           }
+          String formattedExpDate = '';
+
+          if (asset['expdate'] != null &&
+              asset['expdate'].toString().isNotEmpty) {
+            try {
+              final parsedDate = DateTime.parse(asset['expdate']);
+              formattedExpDate = DateFormat('dd-MM-yyyy').format(parsedDate);
+            } catch (e) {
+              formattedExpDate = asset['expdate'].toString().split(' ').first;
+            }
+          }
+
+          final expDateCtrl = TextEditingController(text: formattedExpDate);
+
+          ValueNotifier<int> activeNotifier = ValueNotifier<int>(
+            asset['active'] == 0 ? 0 : 1,
+          );
 
           /// =========================
           /// UI
@@ -79,18 +96,25 @@ Future<bool?> showEditAssetDialog(
             ),
             backgroundColor: Colors.white,
             contentPadding: EdgeInsets.zero,
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 24,
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 /// HEADER
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: const BoxDecoration(
                     color: Color(0xFFFFC107),
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(14)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(14),
+                    ),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -100,7 +124,9 @@ Future<bool?> showEditAssetDialog(
                       Text(
                         'แก้ไขอุปกรณ์',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ],
                   ),
@@ -110,6 +136,32 @@ Future<bool?> showEditAssetDialog(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      /// BRANCH (read-only)
+                      _customRowField(
+                        icon: Icons.apartment,
+                        label: 'สาขา :',
+                        child: Container(
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.black),
+                          ),
+                          child: Text(
+                            asset['branch'] ?? '-',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+
                       /// NAME
                       _customRowField(
                         icon: Icons.h_mobiledata,
@@ -128,11 +180,13 @@ Future<bool?> showEditAssetDialog(
                           builder: (context, currentType, _) {
                             return _customRowField(
                               icon: Icons.build_circle,
-                              label: 'ประเภทอุปกรณ์ :',
+                              label: 'ประเภท :',
                               child: DropdownButtonFormField<String>(
                                 initialValue: currentType,
                                 isExpanded: true,
-                                decoration: _innerInputDecoration(hasIcon: true),
+                                decoration: _innerInputDecoration(
+                                  hasIcon: true,
+                                ),
                                 items: fireTypeItems
                                     .map(
                                       (e) => DropdownMenuItem(
@@ -162,19 +216,108 @@ Future<bool?> showEditAssetDialog(
                         ),
                       ),
 
+                      /// EXP DATE
+                      _customRowField(
+                        icon: Icons.calendar_month,
+                        label: 'วันหมดอายุ :',
+                        child: TextField(
+                          controller: expDateCtrl,
+                          readOnly: true,
+                          textAlign: TextAlign.center,
+                          decoration: _innerInputDecoration(),
+                          onTap: () async {
+                            DateTime initialDate = DateTime.now();
+
+                            if (expDateCtrl.text.isNotEmpty) {
+                              initialDate =
+                                  DateTime.tryParse(expDateCtrl.text) ??
+                                  DateTime.now();
+                            }
+
+                            final pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: initialDate,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+
+                            if (pickedDate != null) {
+                              final thaiYear = pickedDate.year + 543;
+                              final dayStr = pickedDate.day.toString().padLeft(
+                                2,
+                                '0',
+                              );
+                              final monthStr = pickedDate.month
+                                  .toString()
+                                  .padLeft(2, '0');
+                              expDateCtrl.text = '$dayStr-$monthStr-$thaiYear';
+                            }
+                          },
+                        ),
+                      ),
+
+                      /// STATUS ACTIVE
+                      ValueListenableBuilder<int>(
+                        valueListenable: activeNotifier,
+                        builder: (context, currentStatus, _) {
+                          return _customRowField(
+                            icon: Icons.toggle_on,
+                            label: 'สถานะ :',
+                            child: SizedBox(
+                              width: 130, // 👈 ทำให้เล็กลง
+                              height: 35,
+                              child: DropdownButtonFormField<int>(
+                                initialValue: currentStatus,
+                                isExpanded: true,
+                                decoration: _innerInputDecoration(
+                                  hasIcon: false,
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 1,
+                                    child: Text('Active'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 0,
+                                    child: Text('Inactive'),
+                                  ),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    activeNotifier.value = v;
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 20),
 
                       /// ACTIONS
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          _actionButton(
+                            label: 'ประวัติ',
+                            icon: Icons.history,
+                            color: Colors.blue.shade300,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AssetHistoryPage(
+                                    assetId: assetId, // 🔥 ต้องมี id ของอุปกรณ์
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                           _actionButton(
                             label: 'ยกเลิก',
                             icon: Icons.close,
                             color: Colors.grey.shade300,
-                            onPressed: () =>
-                                Navigator.pop(context, false),
+                            onPressed: () => Navigator.pop(context, false),
                           ),
                           _actionButton(
                             label: 'แก้ไข',
@@ -183,23 +326,57 @@ Future<bool?> showEditAssetDialog(
                             onPressed: () async {
                               final navigator = Navigator.of(context);
 
-                              final data = {
-                                'name': nameCtrl.text,
-                                'location': locationCtrl.text,
-                              };
+                              AppAlert.successConfirm(
+                                context,
+                                "คุณต้องการแก้ไขข้อมูลอุปกรณ์นี้หรือไม่?",
+                                onConfirm: () async {
+                                  final data = {
+                                    'name': nameCtrl.text,
+                                    'location': locationCtrl.text,
+                                    'active': activeNotifier.value,
+                                    'expdate': expDateCtrl.text,
+                                  };
 
-                              if (fireTypeNotifier != null) {
-                                data['firetype'] = fireTypeNotifier.value;
-                              }
+                                  if (fireTypeNotifier != null) {
+                                    data['firetype'] = fireTypeNotifier.value;
+                                  }
 
-                              final success = await ApiService.updateAsset(
-                                assetId,
-                                data,
+                                  // 🔄 แสดง Loading
+                                  AppAlert.loading(context);
+
+                                  final success = await ApiService.updateAsset(
+                                    assetId,
+                                    data,
+                                  );
+
+                                  if (!context.mounted) return;
+
+                                  AppAlert.close(context); // ปิด loading
+
+                                  if (success) {
+                                    // ✅ แสดง success 1 วิ
+                                    AppAlert.success(
+                                      context,
+                                      "แก้ไขข้อมูลสำเร็จ",
+                                    );
+
+                                    // ⏳ รอ 1 วินาทีแล้วค่อย pop
+                                    Future.delayed(
+                                      const Duration(seconds: 1),
+                                      () {
+                                        if (context.mounted) {
+                                          navigator.pop(true);
+                                        }
+                                      },
+                                    );
+                                  } else {
+                                    AppAlert.error(
+                                      context,
+                                      "ไม่สามารถแก้ไขข้อมูลได้",
+                                    );
+                                  }
+                                },
                               );
-
-                              if (success && navigator.mounted) {
-                                navigator.pop(true);
-                              }
                             },
                           ),
                         ],
@@ -216,7 +393,6 @@ Future<bool?> showEditAssetDialog(
   );
 }
 
-
 /// =======================================================
 /// ROW FIELD
 /// =======================================================
@@ -224,8 +400,10 @@ Widget _customRowField({
   required IconData icon,
   required String label,
   required Widget child,
+  double fontSize = 16,
 }) {
   return Container(
+    width: double.infinity, // 👈 ให้เต็มความกว้าง
     margin: const EdgeInsets.only(bottom: 12),
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     decoration: BoxDecoration(
@@ -235,11 +413,24 @@ Widget _customRowField({
     ),
     child: Row(
       children: [
-        Icon(icon, color: Colors.blue.shade600, size: 30),
+        Icon(icon, color: Colors.blue.shade600, size: 26),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        SizedBox(
+          width: 110, // 👈 ล็อกความกว้าง label ให้เท่ากันทุกแถว
+          child: Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize),
+          ),
+        ),
         const SizedBox(width: 10),
-        Expanded(child: SizedBox(height: 35, child: child)),
+
+        /// 🔥 ช่องกรอกข้อมูล
+        Expanded(
+          child: SizedBox(
+            height: 42, // 👈 ความสูงมาตรฐานเดียวกัน
+            child: child,
+          ),
+        ),
       ],
     ),
   );
@@ -252,12 +443,18 @@ InputDecoration _innerInputDecoration({bool hasIcon = false}) {
   return InputDecoration(
     filled: true,
     fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     prefixIcon: hasIcon
         ? const Icon(Icons.build_circle_outlined, size: 18)
         : null,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.black),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.black),
+    ),
   );
 }
 
