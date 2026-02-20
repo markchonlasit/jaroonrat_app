@@ -152,13 +152,13 @@ class SummaryItem extends StatelessWidget {
         Text(
           value.toString(),
           style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontSize: 20
+           
           ),
         ),
         Text(
           label,
-          style: const TextStyle(fontSize: 12),
+          style: const TextStyle(fontSize: 15 , fontWeight: FontWeight.bold),
         ),
       ],
     );

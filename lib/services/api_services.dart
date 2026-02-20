@@ -14,6 +14,7 @@ class ApiService {
     return jsonDecode(res.body) as List<dynamic>;
   }
 
+  // ASSET LIST (categoryId)
   static Future<Map<String, dynamic>> getAssetList(int categoryId) async {
     final res = await ApiClient.get('/api/assetlist/$categoryId');
     return jsonDecode(res.body) as Map<String, dynamic>;
@@ -67,10 +68,26 @@ class ApiService {
     int month,
   ) async {
     final res = await ApiClient.get('/api/dashboard/$categoryId/$month');
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body) as Map<String, dynamic>;
-    } else {
-      throw Exception('Failed to load dashboard');
-    }
+    return jsonDecode(res.body) as Map<String, dynamic>;   
   }
+
+
+  // Assetexpdate (categoryid)
+  static Future<Map<String, dynamic>> getAssetexpdate(int categoryId) async {
+    final res = await ApiClient.get('/api/assetexpdate/$categoryId');
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+   // Alert
+  static Future<Map<String, dynamic>> getAlert() async {
+    final res = await ApiClient.get('/api/alert');
+    return jsonDecode(res.body);
+  }
+
+ // Asset History(id)
+  static Future<Map<String, dynamic>> getAssetHistory(int id) async {
+    final res = await ApiClient.get('/api/asset/logs/$id');
+    return jsonDecode(res.body);
+  }
+
 }

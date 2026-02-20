@@ -230,7 +230,7 @@ class _EquipmentSectionState extends State<EquipmentSection> {
     required String hint,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: onChanged,
       isExpanded: true,
