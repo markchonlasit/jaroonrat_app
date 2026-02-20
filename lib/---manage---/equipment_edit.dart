@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
+import 'package:intl/intl.dart';
 
 Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
   return showDialog<bool>(
@@ -65,6 +66,13 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                   : fireTypeItems.first,
             );
           }
+          final expDateCtrl = TextEditingController(
+            text: asset['expdate'] ?? '',
+          );
+
+          ValueNotifier<int> activeNotifier = ValueNotifier<int>(
+            asset['active'] == 0 ? 0 : 1,
+          );
 
           /// =========================
           /// UI
@@ -196,6 +204,76 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                         ),
                       ),
 
+                      /// EXP DATE
+                      _customRowField(
+                        icon: Icons.calendar_month,
+                        label: 'วันหมดอายุ :',
+                        child: TextField(
+                          controller: expDateCtrl,
+                          readOnly: true,
+                          textAlign: TextAlign.center,
+                          decoration: _innerInputDecoration(),
+                          onTap: () async {
+                            DateTime initialDate = DateTime.now();
+
+                            if (expDateCtrl.text.isNotEmpty) {
+                              initialDate =
+                                  DateTime.tryParse(expDateCtrl.text) ??
+                                  DateTime.now();
+                            }
+
+                            final pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: initialDate,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+
+                            if (pickedDate != null) {
+                              expDateCtrl.text = DateFormat(
+                                'dd-MM-yyyy',
+                              ).format(pickedDate);
+                            }
+                          },
+                        ),
+                      ),
+
+                      /// STATUS ACTIVE
+                      ValueListenableBuilder<int>(
+                        valueListenable: activeNotifier,
+                        builder: (context, currentStatus, _) {
+                          return _customRowField(
+                            icon: Icons.toggle_on,
+                            label: 'สถานะ :',
+                            child: SizedBox(
+                              width: 130, // 👈 ทำให้เล็กลง
+                              height: 35,
+                              child: DropdownButtonFormField<int>(
+                                value: currentStatus,
+                                isExpanded: true,
+                                decoration: _innerInputDecoration(
+                                  hasIcon: false,
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 1,
+                                    child: Text('Active'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 0,
+                                    child: Text('Inactive'),
+                                  ),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    activeNotifier.value = v;
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 20),
 
                       /// ACTIONS
@@ -224,6 +302,8 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                               final data = {
                                 'name': nameCtrl.text,
                                 'location': locationCtrl.text,
+                                'active': activeNotifier.value,
+                                'expdate': expDateCtrl.text,
                               };
 
                               if (fireTypeNotifier != null) {
