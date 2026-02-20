@@ -61,7 +61,7 @@ class _BallPageState extends State<BallPage> {
   }
 
   Color _getColorByType(String type) {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'เขียว':
         return Colors.green;
       case 'แดง':
@@ -175,67 +175,50 @@ class _BallPageState extends State<BallPage> {
                                     assetId:
                                         item['id'],
                                     assetName:
-                                        item['name'] ??
-                                            '-',
+                                        item['name'] ?? '-',
                                   ),
                                 ),
                               );
                             },
                             child: Container(
-                              margin:const EdgeInsets.all(12),
+                              margin: const EdgeInsets.all(12),
                               padding: const EdgeInsets.all(14),
-                              decoration:
-                                  BoxDecoration(
+                              decoration: BoxDecoration(
                                 borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                            14),
-                                border:
-                                    Border.all(
-                                  color:
-                                      _getColorByType(
-                                          item[
-                                              'type']),
+                                    BorderRadius.circular(14),
+
+                                /// ✅ กรอบสีดำทั้งหมด
+                                border: Border.all(
+                                  color: Colors.black,
                                   width: 2,
                                 ),
                               ),
                               child: Row(
                                 crossAxisAlignment:
-                                    CrossAxisAlignment
-                                        .start,
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Icon(
-                                    Icons
-                                        .sports_baseball,
-                                    color:
-                                        _getColorByType(
-                                            item[
-                                                'type']),
+                                    Icons.sports_baseball,
+                                    color: _getColorByType(
+                                        item['type']),
                                     size: 40,
                                   ),
-                                  const SizedBox(
-                                      width: 14),
+                                  const SizedBox(width: 14),
                                   Expanded(
-                                    child:
-                                        Column(
+                                    child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment
-                                              .start,
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          item['name'] ??
-                                              '-',
+                                          item['name'] ?? '-',
                                           style:
                                               const TextStyle(
-                                            fontSize:
-                                                15,
+                                            fontSize: 15,
                                             fontWeight:
                                                 FontWeight.bold,
                                           ),
                                         ),
-                                        const SizedBox(
-                                            height:
-                                                6),
+                                        const SizedBox(height: 6),
                                         Text(
                                             'ID: ${item['id']}'),
                                         Text(
@@ -244,35 +227,36 @@ class _BallPageState extends State<BallPage> {
                                             'วันหมดอายุ: ${item['expdate'] ?? '-'}'),
                                         Text(
                                             'สถานที่: ${item['location']}'),
+
+                                        /// ✅ สีข้อความตามสีลูกบอล
                                         Text(
-                                            'ประเภทสีของลูกบอล: ${item['type']}'),
-                                        const SizedBox(
-                                            height:
-                                                6),
+                                          'ประเภทสีของลูกบอล: ${item['type']}',
+                                          style: TextStyle(
+                                            color: _getColorByType(
+                                                item['type']),
+                                            fontWeight:
+                                                FontWeight.bold,
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 6),
                                         Row(
                                           children: [
                                             Icon(
-                                              item['active'] ==
-                                                      1
+                                              item['active'] == 1
                                                   ? Icons
                                                       .check_circle
                                                   : Icons
                                                       .cancel,
-                                              size:
-                                                  16,
-                                              color: item['active'] ==
-                                                      1
-                                                  ? Colors
-                                                      .green
-                                                  : Colors
-                                                      .red,
+                                              size: 16,
+                                              color:
+                                                  item['active'] == 1
+                                                      ? Colors.green
+                                                      : Colors.red,
                                             ),
-                                            const SizedBox(
-                                                width:
-                                                    6),
+                                            const SizedBox(width: 6),
                                             Text(
-                                              item['active'] ==
-                                                      1
+                                              item['active'] == 1
                                                   ? 'ใช้งานอยู่'
                                                   : 'ไม่พร้อมใช้งาน',
                                             ),

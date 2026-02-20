@@ -1,8 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '/services/auth_service.dart';
-
 
 class InspectfhcPage extends StatefulWidget {
   final int assetId;
@@ -15,17 +16,18 @@ class InspectfhcPage extends StatefulWidget {
   });
 
   @override
-  State<InspectfhcPage> createState() => _InspectFirePageState();
+  State<InspectfhcPage> createState() => _InspectfhcPageState();
 }
 
-class _InspectFirePageState extends State<InspectfhcPage> {
+class _InspectfhcPageState extends State<InspectfhcPage> {
   bool isLoading = true;
-  List<dynamic> checklist = [];
-
-  /// checklistId -> true(ผ่าน) / false(ไม่ผ่าน)
+  List checklist = [];
   final Map<int, bool> selectedResult = {};
+  final TextEditingController remarkController = TextEditingController();
 
-  /// 🔥 checklist ของถังนั้นจริง ๆ
+  File? imageFile;
+  final picker = ImagePicker();
+
   String get checklistApi =>
       'https://api.jaroonrat.com/safetyaudit/api/checklist/2/${widget.assetId}';
 
@@ -35,16 +37,11 @@ class _InspectFirePageState extends State<InspectfhcPage> {
     fetchChecklist();
   }
 
-  /// 🔽 โหลด checklist ตาม assetId
   Future<void> fetchChecklist() async {
     try {
-      setState(() => isLoading = true);
-
       final res = await http.get(
         Uri.parse(checklistApi),
-        headers: {
-          'Authorization': 'Bearer ${AuthService.token}',
-        },
+        headers: {'Authorization': 'Bearer ${AuthService.token}'},
       );
 
       if (res.statusCode == 200) {
@@ -52,230 +49,146 @@ class _InspectFirePageState extends State<InspectfhcPage> {
           checklist = jsonDecode(res.body);
           isLoading = false;
         });
-      } else {
-        isLoading = false;
-        _showError('โหลด checklist ไม่สำเร็จ (${res.statusCode})');
       }
-    } catch (e) {
-      isLoading = false;
-      _showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+    } catch (_) {
+      _showError('โหลด checklist ไม่สำเร็จ');
     }
   }
 
-  /// 🔥 ส่งข้อมูลตรวจสอบ
+  Future<void> takePhoto() async {
+    final picked = await picker.pickImage(source: ImageSource.camera);
+    if (picked != null) {
+      setState(() => imageFile = File(picked.path));
+    }
+  }
+
   Future<void> submitAudit() async {
     if (selectedResult.length != checklist.length) {
       _showError('กรุณาตรวจสอบให้ครบทุกข้อ');
       return;
     }
 
-    /// ✅ PAYLOAD ตรง backend (Postman)
     final payload = {
       "assetid": widget.assetId,
-      "remark": "ทดสอบ",
+      "remark": remarkController.text,
       "ans": checklist.map((item) {
-        final int id = item['id'];
-        final bool isPass = selectedResult[id] ?? false;
-
-        return {
-          "id": id,
-          "status": isPass ? 1 : 2, // 1 = ผ่าน, 2 = ไม่ผ่าน
-        };
+        final id = item['id'];
+        return {"id": id, "status": selectedResult[id]! ? 1 : 2};
       }).toList(),
     };
 
-    debugPrint('📦 PAYLOAD => ${jsonEncode(payload)}');
+    final res = await http.post(
+      Uri.parse('https://api.jaroonrat.com/safetyaudit/api/submitaudit'),
+      headers: {
+        'Authorization': 'Bearer ${AuthService.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
 
-    try {
-      final res = await http.post(
-        Uri.parse(
-          'https://api.jaroonrat.com/safetyaudit/api/submitaudit',
+    if (res.statusCode == 200 && mounted) Navigator.pop(context);
+  }
+
+  void _showError(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
+  @override
+  Widget build(BuildContext context) {
+    return _buildUI();
+  }
+
+  Widget _buildUI() {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade100,
+      appBar: AppBar(backgroundColor: Colors.red, title: Text(widget.assetName)),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    ...checklist.map((item) {
+                      final id = item['id'];
+                      return _checkCard(item, id);
+                    }),
+                    const SizedBox(height: 10),
+                    _remarkField(),
+                    const SizedBox(height: 12),
+                    _cameraButton(),
+                    if (imageFile != null) Image.file(imageFile!, height: 180)
+                  ],
+                ),
+              ),
+              _submitButton()
+            ]),
+    );
+  }
+
+  Widget _checkCard(item, id) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        InkWell(
+          onTap: () => setState(() => selectedResult[id] = true),
+          child: Row(children: [
+            Icon(selectedResult[id] == true ? Icons.check_circle : Icons.radio_button_unchecked, color: Colors.green),
+            const SizedBox(width: 8),
+            Text(item['detail_Y']),
+          ]),
         ),
-        headers: {
-          'Authorization': 'Bearer ${AuthService.token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(payload),
-      );
-
-      debugPrint('STATUS => ${res.statusCode}');
-      debugPrint('BODY => ${res.body}');
-
-      if (res.statusCode == 200) {
-        if (!mounted) return;
-
-        /// 📋 เตรียมข้อมูลไปหน้า detail
-        final detailResult = checklist.map<Map<String, dynamic>>((item) {
-          final int id = item['id'];
-          return {
-            "name": item['name'],
-            "answer": selectedResult[id]!
-                ? item['detail_Y']
-                : item['detail_N'],
-          };
-        }).toList();
-
-      } else {
-        _showError('บันทึกไม่สำเร็จ (${res.statusCode})');
-      }
-    } catch (e) {
-      _showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
-    }
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => setState(() => selectedResult[id] = false),
+          child: Row(children: [
+            Icon(selectedResult[id] == false ? Icons.cancel : Icons.radio_button_unchecked, color: Colors.red),
+            const SizedBox(width: 8),
+            Text(item['detail_N']),
+          ]),
+        ),
+      ]),
+    );
   }
 
-  void _showError(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
-  }
-
-  void _confirmCancel() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('ยืนยันการยกเลิก'),
-        content: const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ไม่ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'ยกเลิก',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
+  Widget _remarkField() {
+    return TextField(
+      controller: remarkController,
+      maxLines: 3,
+      decoration: InputDecoration(
+        hintText: 'หมายเหตุ',
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 255, 110, 64),
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-        title: Text(widget.assetName),
+  Widget _cameraButton() {
+    return ElevatedButton.icon(
+      onPressed: takePhoto,
+      icon: const Icon(Icons.camera_alt),
+      label: const Text('ถ่ายรูป'),
+    );
+  }
+
+  Widget _submitButton() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: ElevatedButton(
+        onPressed: submitAudit,
+        style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            minimumSize: const Size.fromHeight(50)),
+        child: const Text('บันทึก'),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: checklist.length,
-                    itemBuilder: (_, i) {
-                      final item = checklist[i];
-                      final int id = item['id'];
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
-                            )
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['name'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-
-                            /// ✅ ผ่าน
-                            InkWell(
-                              onTap: () =>
-                                  setState(() => selectedResult[id] = true),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    selectedResult[id] == true
-                                        ? Icons.check_circle
-                                        : Icons.radio_button_unchecked,
-                                    color: Colors.green,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(item['detail_Y']),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            /// ❌ ไม่ผ่าน
-                            InkWell(
-                              onTap: () =>
-                                  setState(() => selectedResult[id] = false),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    selectedResult[id] == false
-                                        ? Icons.cancel
-                                        : Icons.radio_button_unchecked,
-                                    color: Colors.red,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(item['detail_N']),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                /// 🔘 ปุ่มล่าง
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _confirmCancel,
-                          child: const Text('ยกเลิก'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: submitAudit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
-                          child: const Text('บันทึก'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
     );
   }
 }
