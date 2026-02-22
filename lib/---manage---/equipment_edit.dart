@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
-import 'package:intl/intl.dart';
 import '/utils/app_alert.dart';
 import 'equipment_history_edit.dart';
 

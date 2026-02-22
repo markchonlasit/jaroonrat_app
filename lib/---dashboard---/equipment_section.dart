@@ -89,12 +89,14 @@ class _EquipmentSectionState extends State<EquipmentSection> {
     final initialYear = int.parse(selectedMonth.toString().substring(0, 4));
     final initialMonth = int.parse(selectedMonth.toString().substring(4));
 
+    final now = DateTime.now();
+
     final picked = await showMonthPicker(
       context: context,
-
+      
       initialDate: DateTime(initialYear, initialMonth),
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      lastDate: DateTime(now.year, now.month),
     );
 
     if (picked != null) {
@@ -106,7 +108,7 @@ class _EquipmentSectionState extends State<EquipmentSection> {
         selectedMonth = formatted;
       });
 
-      _fetchDashboardData();
+      await _fetchDashboardData();
     }
   }
 
@@ -115,7 +117,13 @@ class _EquipmentSectionState extends State<EquipmentSection> {
     final month = int.parse(value.toString().substring(4));
     final date = DateTime(year, month);
 
-    return DateFormat.yMMMM('th_TH').format(date); // ✅ เปลี่ยนตรงนี้
+    // ✅ ดึงชื่อเดือนแบบเต็ม เช่น "กุมภาพันธ์"
+    String monthName = DateFormat.MMMM('th_TH').format(date);
+
+    // ✅ คำนวณปี พ.ศ.
+    int thaiYear = year + 543;
+
+    return "$monthName พ.ศ.$thaiYear";
   }
 
   /// =========================
@@ -138,7 +146,7 @@ class _EquipmentSectionState extends State<EquipmentSection> {
   }
 
   List<PieChartSectionData> _buildPieSections(List<dynamic> data) {
-    final total = statusData['total'] ?? 1;
+    // final total = statusData['total'] ?? 1;
 
     return List.generate(data.length, (index) {
       final item = data[index];

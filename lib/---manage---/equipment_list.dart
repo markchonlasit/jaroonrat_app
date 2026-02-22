@@ -20,6 +20,23 @@ class AssetListPage extends StatefulWidget {
 
 class _AssetListPageState extends State<AssetListPage> {
   String keyword = '';
+  late Future<Map<String, dynamic>> _assetFuture;
+  @override
+  void initState() {
+    super.initState();
+    _assetFuture = ApiService.getAssetList(widget.categoryId);
+  }
+
+  String? selectedType;
+  int? selectedActive;
+  DateTime? selectedDate;
+
+  InputDecoration _dropdownDecoration() {
+    return InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +66,7 @@ class _AssetListPageState extends State<AssetListPage> {
       /// BODY
       /// =========================
       body: FutureBuilder<Map<String, dynamic>>(
-        future: ApiService.getAssetList(widget.categoryId),
+        future: _assetFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -68,9 +85,43 @@ class _AssetListPageState extends State<AssetListPage> {
           final bool fireAsset = data['fireasset'] ?? false;
 
           final filtered = assets.where((e) {
-            return e['name'].toString().toLowerCase().contains(
-              keyword.toLowerCase(),
-            );
+            final name = e['name']?.toString().toLowerCase() ?? '';
+            final location = e['location']?.toString().toLowerCase() ?? '';
+            final type = e['type']?.toString();
+            final active = e['active'];
+            final expdateStr = e['expdate']?.toString();
+
+            final matchKeyword =
+                keyword.isEmpty ||
+                name.contains(keyword.toLowerCase()) ||
+                location.contains(keyword.toLowerCase());
+
+            final matchType = selectedType == null || type == selectedType;
+
+            final matchActive =
+                selectedActive == null || active == selectedActive;
+
+            bool matchDate = true;
+
+            if (selectedDate != null && expdateStr != null) {
+              try {
+                final parts = expdateStr.split(' ')[0].split('/');
+                final date = DateTime(
+                  int.parse(parts[2]),
+                  int.parse(parts[1]),
+                  int.parse(parts[0]),
+                );
+
+                matchDate =
+                    date.year == selectedDate!.year &&
+                    date.month == selectedDate!.month &&
+                    date.day == selectedDate!.day;
+              } catch (_) {
+                matchDate = false;
+              }
+            }
+
+            return matchKeyword && matchType && matchActive && matchDate;
           }).toList();
 
           return Column(
@@ -83,7 +134,7 @@ class _AssetListPageState extends State<AssetListPage> {
               /// =========================
               /// SEARCH / FILTER
               /// =========================
-              _searchBar(),
+              _searchBar(assets),
 
               /// =========================
               /// LIST
@@ -178,41 +229,95 @@ class _AssetListPageState extends State<AssetListPage> {
   /// =========================
   /// SEARCH BAR
   /// =========================
-  Widget _searchBar() {
+  Widget _searchBar(List assets) {
+    final types = assets
+        .map((e) => e['type']?.toString())
+        .where((e) => e != null && e.isNotEmpty)
+        .toSet()
+        .toList();
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      padding: const EdgeInsets.all(16),
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              onChanged: (v) => setState(() => keyword = v),
-              decoration: InputDecoration(
-                hintText: 'ค้นหา',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+          /// 🔎 ค้นหา name + location
+          TextField(
+            onChanged: (v) => setState(() => keyword = v),
+            decoration: InputDecoration(
+              hintText: 'ค้นหา ชื่อ / สถานที่',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          _squareIcon(Icons.build),
-          const SizedBox(width: 8),
-          _squareIcon(Icons.tune),
+
+          const SizedBox(height: 12),
+
+          /// 📦 ประเภท + ✅ สถานะ
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: selectedType,
+                  hint: const Text("เลือกประเภท"),
+                  items: types
+                      .map(
+                        (type) =>
+                            DropdownMenuItem(value: type, child: Text(type!)),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => selectedType = v),
+                  decoration: _dropdownDecoration(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: selectedActive,
+                  hint: const Text("เลือกสถานะ"),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text("ใช้งาน")),
+                    DropdownMenuItem(value: 0, child: Text("ไม่ได้ใช้งาน")),
+                  ],
+                  onChanged: (v) => setState(() => selectedActive = v),
+                  decoration: _dropdownDecoration(),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          GestureDetector(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: selectedDate ?? DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(3100),
+              );
+
+              if (picked != null) {
+                setState(() => selectedDate = picked);
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                selectedDate == null
+                    ? "เลือกวันหมดอายุ"
+                    : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+              ),
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _squareIcon(IconData icon) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        border: Border.all(),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(icon),
     );
   }
 
