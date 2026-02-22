@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
 
-
 class BranchCard extends StatefulWidget {
   const BranchCard({super.key});
 
@@ -19,25 +18,26 @@ class _BranchCardState extends State<BranchCard> {
     _loadBranch();
   }
 
-Future<void> _loadBranch() async {
-  try {
-    final profile = await ApiService.getProfile();
+  Future<void> _loadBranch() async {
+    try {
+      final profile = await ApiService.getProfile();
 
-    final branch = profile['branch'] ?? '';
+      final branch = profile['branch'] ?? '';
 
-    setState(() {
-      branchName = branch.isNotEmpty
-          ? 'บริษัท จรูญรัตน์ โปรดักส์ จำกัด \n$branch'
-          : 'บริษัท จรูญรัตน์ โปรดักส์ จำกัด';
-      loading = false;
-    });
-  } catch (e) {
-    setState(() {
-      branchName = 'บริษัท จรูญรัตน์ โปรดักส์ จำกัด';
-      loading = false;
-    });
+      setState(() {
+        branchName = branch.isNotEmpty
+            ? 'บริษัทจรูญรัตน์โปรดักส์จำกัด$branch'
+            : 'บริษัทจรูญรัตน์โปรดักส์จำกัด';
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        branchName = 'บริษัทจรูญรัตน์โปรดักส์จำกัด';
+        loading = false;
+      });
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -46,13 +46,22 @@ Future<void> _loadBranch() async {
         side: const BorderSide(color: Colors.black),
       ),
       child: ListTile(
-        leading: const Icon(
-          Icons.home,
-          color: Color(0xFF0047AB),
-        ),
+        leading: const Icon(Icons.home, color: Color(0xFF0047AB)),
         title: loading
-            ? const Text('กำลังโหลดข้อมูลสาขา...')
-            : Text(branchName),
+            ? const Text(
+                'กำลังโหลดข้อมูลสาขา...',
+                style: TextStyle(
+                  fontSize: 15, // ปรับขนาดตรงนี้
+              
+                ),
+              )
+            : Text(
+                branchName,
+                style: const TextStyle(
+                  fontSize: 15, // ปรับขนาดตัวอักษรชื่อบริษัท
+        
+                ),
+              ),
       ),
     );
   }

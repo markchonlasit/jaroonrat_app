@@ -75,8 +75,10 @@ class _NotificationPageState extends State<NotificationPage> {
         return Colors.red.shade200;
       case "ใกล้หมดอายุ":
         return Colors.orange.shade200;
-      default:
+      case "ใช้งานได้":
         return Colors.green.shade200;
+      default:
+        return Colors.grey.shade200;
     }
   }
 
@@ -311,7 +313,9 @@ class _NotificationPageState extends State<NotificationPage> {
                               ? Colors.red
                               : status == "ใกล้หมด"
                               ? Colors.orange
-                              : Colors.green,
+                              : status == "ใช้งานได้"
+                              ? Colors.green
+                              : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(

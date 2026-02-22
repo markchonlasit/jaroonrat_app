@@ -68,19 +68,16 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                   : fireTypeItems.first,
             );
           }
-          String formattedExpDate = '';
+          // 1. ดึงค่าจาก API ถ้าเป็น null ให้เป็น String ว่าง
+          String apiDateValue = asset['expdate']?.toString() ?? '';
 
-          if (asset['expdate'] != null &&
-              asset['expdate'].toString().isNotEmpty) {
-            try {
-              final parsedDate = DateTime.parse(asset['expdate']);
-              formattedExpDate = DateFormat('dd-MM-yyyy').format(parsedDate);
-            } catch (e) {
-              formattedExpDate = asset['expdate'].toString().split(' ').first;
-            }
+          // 2. จัดการตัวหนังสือที่จะโชว์ใน TextField (เช่น 01-01-2569)
+          String initialText = '';
+          if (apiDateValue.isNotEmpty) {
+            // ตัดเอาแค่ส่วนวันที่ "01/01/2569" มาเปลี่ยน / เป็น - เพื่อโชว์
+            initialText = apiDateValue.split(' ').first.replaceAll('/', '-');
           }
-
-          final expDateCtrl = TextEditingController(text: formattedExpDate);
+          final expDateCtrl = TextEditingController(text: initialText);
 
           ValueNotifier<int> activeNotifier = ValueNotifier<int>(
             asset['active'] == 0 ? 0 : 1,
@@ -228,29 +225,49 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                           onTap: () async {
                             DateTime initialDate = DateTime.now();
 
-                            if (expDateCtrl.text.isNotEmpty) {
-                              initialDate =
-                                  DateTime.tryParse(expDateCtrl.text) ??
-                                  DateTime.now();
+                            // 1. ถ้ามีค่าเดิม (เช่น "01/01/2569 00:00:00") ให้แปลงเป็น DateTime เพื่อเปิดปฏิทินให้ถูกปี
+                            if (apiDateValue.isNotEmpty) {
+                              try {
+                                List<String> dateParts = apiDateValue
+                                    .split(' ')[0]
+                                    .split('/');
+                                int d = int.parse(dateParts[0]);
+                                int m = int.parse(dateParts[1]);
+                                int y = int.parse(
+                                  dateParts[2],
+                                ); // ใช้ 2569 ตรงๆ เพราะเราใช้ปฏิทินไทย
+                                initialDate = DateTime(y, m, d);
+                              } catch (e) {
+                                initialDate = DateTime.now();
+                              }
                             }
 
                             final pickedDate = await showDatePicker(
                               context: context,
                               initialDate: initialDate,
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2100),
+                              firstDate: DateTime(
+                                2500,
+                              ), // ตั้งให้ครอบคลุมปี พ.ศ.
+                              lastDate: DateTime(4000),
+                              // ไม่ต้องใส่ locale ตรงนี้แล้วก็ได้ เพราะใน main.dart กำหนดไว้แล้ว
                             );
 
                             if (pickedDate != null) {
-                              final thaiYear = pickedDate.year + 543;
-                              final dayStr = pickedDate.day.toString().padLeft(
-                                2,
-                                '0',
-                              );
-                              final monthStr = pickedDate.month
+                              // 2. ใช้ปีจาก pickedDate ได้เลย (มันจะเป็น 2569 อยู่แล้ว)
+                              // ❌ ห้ามบวก 543 เพิ่มเด็ดขาด
+                              final int year = pickedDate.year;
+                              final String day = pickedDate.day
                                   .toString()
                                   .padLeft(2, '0');
-                              expDateCtrl.text = '$dayStr-$monthStr-$thaiYear';
+                              final String month = pickedDate.month
+                                  .toString()
+                                  .padLeft(2, '0');
+
+                              // ✅ อัปเดต UI (โชว์ 01-01-2569)
+                              expDateCtrl.text = '$day-$month-$year';
+
+                              // ✅ เตรียมค่าส่ง API (เก็บ 01/01/2569 00:00:00)
+                              apiDateValue = '$day/$month/$year 00:00:00';
                             }
                           },
                         ),
@@ -275,11 +292,11 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                                 items: const [
                                   DropdownMenuItem(
                                     value: 1,
-                                    child: Text('Active'),
+                                    child: Text('ใช้งาน'),
                                   ),
                                   DropdownMenuItem(
                                     value: 0,
-                                    child: Text('Inactive'),
+                                    child: Text('ไม่ได้ใช้งาน'),
                                   ),
                                 ],
                                 onChanged: (v) {
@@ -334,7 +351,7 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                                     'name': nameCtrl.text,
                                     'location': locationCtrl.text,
                                     'active': activeNotifier.value,
-                                    'expdate': expDateCtrl.text,
+                                    'expdate': apiDateValue,
                                   };
 
                                   if (fireTypeNotifier != null) {

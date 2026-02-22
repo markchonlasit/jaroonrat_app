@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
-import '/widgets/topbar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -36,10 +35,20 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
-      appBar: TopBar(
-        username: '',
-        onProfile: () {},
-        onLogout: () => Navigator.pop(context),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0047AB),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'หน้าหลัก',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())

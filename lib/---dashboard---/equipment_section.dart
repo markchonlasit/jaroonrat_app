@@ -3,6 +3,7 @@ import '/services/api_services.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class EquipmentSection extends StatefulWidget {
   const EquipmentSection({super.key});
@@ -115,6 +116,81 @@ class _EquipmentSectionState extends State<EquipmentSection> {
     final date = DateTime(year, month);
 
     return DateFormat.yMMMM('th_TH').format(date); // ✅ เปลี่ยนตรงนี้
+  }
+
+  /// =========================
+  /// 🔹 pie graph
+  /// =========================
+  ///
+  Color _getColorByName(String name) {
+    switch (name.trim().toLowerCase()) {
+      case 'dry':
+        return Colors.blue;
+      case 'เงิน':
+        return Colors.grey;
+      case 'แดง':
+        return Colors.red;
+      case 'เขียว':
+        return Colors.green;
+      default:
+        return Colors.blueGrey; // fallback ถ้าไม่ตรงเงื่อนไข
+    }
+  }
+
+  List<PieChartSectionData> _buildPieSections(List<dynamic> data) {
+    final total = statusData['total'] ?? 1;
+
+    return List.generate(data.length, (index) {
+      final item = data[index];
+      final value = item['data'] ?? 0;
+      final name = item['name'] ?? '';
+
+      // final percentage = total == 0 ? 0 : ((value / total) * 100);
+
+      return PieChartSectionData(
+        color: _getColorByName(name), // 🔥 ใช้ตรงนี้แทน
+        value: value.toDouble(),
+        // title: '${percentage.toStringAsFixed(1)}%',
+        title: '',
+        radius: 40,
+        titleStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    });
+  }
+
+  List<Widget> _buildLegend(List<dynamic> data) {
+    final total = statusData['total'] ?? 1;
+
+    return List.generate(data.length, (index) {
+      final item = data[index];
+      final value = item['data'] ?? 0;
+      final name = item['name'] ?? '';
+
+      final percentage = total == 0 ? 0 : ((value / total) * 100);
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: _getColorByName(name), // 🔥 ตรงนี้
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(name)),
+            Text('${percentage.toStringAsFixed(1)}%'),
+          ],
+        ),
+      );
+    });
   }
 
   @override
@@ -334,21 +410,67 @@ class _EquipmentSectionState extends State<EquipmentSection> {
     ),
   );
 
-  Widget _noTypeBox() => Container(
-    padding: const EdgeInsets.symmetric(vertical: 20),
-    width: double.infinity,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: Colors.black),
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: const Center(
-      child: Text(
-        'ไม่มีประเภทของอุปกรณ์ชนิดนี้',
-        style: TextStyle(color: Colors.grey),
+  Widget _noTypeBox() {
+    final pieData = statusData['piechart'];
+
+    if (pieData == null || pieData.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.black),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Center(
+          child: Text(
+            'ไม่มีประเภทของอุปกรณ์ชนิดนี้',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.black),
+        borderRadius: BorderRadius.circular(10),
       ),
-    ),
-  );
+      child: Row(
+        children: [
+          /// 🔹 Pie Chart
+          Expanded(
+            flex: 1,
+            child: SizedBox(
+              height: 120,
+              child: PieChart(
+                PieChartData(
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 30,
+                  sections: _buildPieSections(pieData),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 20),
+
+          /// 🔹 Legend
+          Expanded(
+            flex: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: _buildLegend(pieData),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _StatusBox extends StatelessWidget {

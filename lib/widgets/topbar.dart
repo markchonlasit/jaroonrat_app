@@ -13,40 +13,83 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(48);
+  Size get preferredSize => const Size.fromHeight(60);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      elevation: 4,
       backgroundColor: const Color(0xFF0047AB),
+      automaticallyImplyLeading: false,
       title: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.person, color: Colors.white),
-          const SizedBox(width: 8),
-          Text(
-            username,
-            style: const TextStyle(color: Colors.white),
+          // 🔹 รูปด้านซ้าย (แก้ path ตามโปรเจคคุณ)
+          Image.asset(
+            'images/logo-circle.png',
+            height: 32,
+          ),
+
+          const Spacer(),
+
+          // 🔹 username ด้านขวา
+          Row(
+            children: [
+              const Icon(
+                Icons.account_circle,
+                color: Colors.white,
+                size: 22,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                username,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      centerTitle: true,
       actions: [
-        PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'profile') onProfile();
-            if (value == 'logout') onLogout();
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(
-              value: 'profile',
-              child: Text('บัญชีผู้ใช้'),
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: PopupMenuButton<String>(
+            icon: const Icon(
+              Icons.menu,
+              color: Colors.white,
             ),
-            PopupMenuItem(
-              value: 'logout',
-              child: Text('ออกจากระบบ'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
+            onSelected: (value) {
+              if (value == 'profile') onProfile();
+              if (value == 'logout') onLogout();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person, size: 18, color: Colors.blueAccent),
+                    SizedBox(width: 8),
+                    Text('บัญชีผู้ใช้'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 18, color: Colors.redAccent),
+                    SizedBox(width: 8),
+                    Text('ออกจากระบบ'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

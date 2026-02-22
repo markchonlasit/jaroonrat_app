@@ -4,29 +4,22 @@ import '---login---/login.dart';
 import 'utils/http_override.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-
-
 void main() {
-  
   HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      /// ✅ กำหนดภาษาไทย
-      locale: Locale('th'),
+      locale: Locale('th', 'TH'),
 
-      supportedLocales: [
-        Locale('th'),
-        Locale('en'),
-      ],
+      supportedLocales: [Locale('th', 'TH'), Locale('en', 'US')],
 
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,

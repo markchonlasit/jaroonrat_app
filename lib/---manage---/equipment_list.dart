@@ -140,10 +140,7 @@ class _AssetListPageState extends State<AssetListPage> {
                   const SizedBox(height: 6),
                   Text(
                     'จำนวนทั้งหมด $total',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.black),
                   ),
                 ],
               ),
@@ -158,7 +155,6 @@ class _AssetListPageState extends State<AssetListPage> {
                 color: Colors.white,
               ),
               child: Row(
-              
                 children: [
                   Icon(icon, size: 30, color: color),
                   const SizedBox(width: 12),
@@ -343,6 +339,22 @@ class _AssetListPageState extends State<AssetListPage> {
                   const SizedBox(height: 6),
                 ],
                 const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      item['active'] == 1 ? Icons.check_circle : Icons.cancel,
+                      color: item['active'] == 1 ? Colors.green : Colors.red,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      item['active'] == 1 ? 'ใช้งาน' : 'ไม่ได้ใช้งาน',
+                      style: TextStyle(
+                        color: item['active'] == 1 ? Colors.green : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
 
                 // วันที่หมดอายุ (เพิ่มเข้ามาตาม Layout ใหม่)
               ],
@@ -354,6 +366,8 @@ class _AssetListPageState extends State<AssetListPage> {
           /// 🔹 ส่วนที่ 3: ACTION BUTTONS (รายละเอียด, แก้ไข)
           Column(
             children: [
+              // ชื่ออุปกรณ์
+              const SizedBox(height: 9),
               _actionButton(
                 onPressed: () {
                   Navigator.push(
@@ -367,7 +381,7 @@ class _AssetListPageState extends State<AssetListPage> {
                 label: 'รายละเอียด',
                 color: Colors.blue,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 3),
               _actionButton(
                 onPressed: () async {
                   final updated = await showEditAssetDialog(

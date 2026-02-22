@@ -45,9 +45,9 @@ class DashboardPage extends StatelessWidget {
           child: Column(
             children: const [
               BranchCard(),
-              SizedBox(height: 12),
+              SizedBox(height: 6),
               EquipmentSection(),
-              SizedBox(height: 12),
+              SizedBox(height: 6),
               TotalEquipmentSection(),
             ],
           ),
