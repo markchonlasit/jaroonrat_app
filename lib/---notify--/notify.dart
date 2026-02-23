@@ -13,6 +13,12 @@ class _NotificationPageState extends State<NotificationPage> {
   List<dynamic> filteredAssets = [];
   bool loading = true;
 
+  String searchKeyword = "";
+  String selectedType = "ทั้งหมด";
+  String selectedStatus = "ทั้งหมด";
+  DateTime? selectedDate;
+  bool showFilter = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,7 +56,11 @@ class _NotificationPageState extends State<NotificationPage> {
   /// =========================
   /// 🔹 คำนวณสถานะ
   /// =========================
-  String getStatus(String expdate) {
+  String getStatus(String? expdate) {
+    if (expdate == null || expdate.isEmpty) {
+      return "ไม่มีวันหมดอายุ";
+    }
+
     DateTime exp = parseThaiDate(expdate);
     DateTime now = DateTime.now();
 
@@ -65,21 +75,6 @@ class _NotificationPageState extends State<NotificationPage> {
     }
 
     return "ใช้งานได้";
-  }
-
-  Color getStatusColor(String expdate) {
-    final status = getStatus(expdate);
-
-    switch (status) {
-      case "หมดอายุ":
-        return Colors.red.shade200;
-      case "ใกล้หมดอายุ":
-        return Colors.orange.shade200;
-      case "ใช้งานได้":
-        return Colors.green.shade200;
-      default:
-        return Colors.grey.shade200;
-    }
   }
 
   /// =========================
@@ -299,6 +294,31 @@ class _NotificationPageState extends State<NotificationPage> {
                               ],
                             ),
                             const SizedBox(height: 6),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(
+                                  item['active'] == 1
+                                      ? Icons.check_circle
+                                      : Icons.cancel,
+                                  color: item['active'] == 1
+                                      ? Colors.green
+                                      : Colors.red,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  item['active'] == 1
+                                      ? 'ใช้งาน'
+                                      : 'ไม่ได้ใช้งาน',
+                                  style: TextStyle(
+                                    color: item['active'] == 1
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),

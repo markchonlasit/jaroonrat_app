@@ -30,6 +30,7 @@ class _AssetListPageState extends State<AssetListPage> {
   String? selectedType;
   int? selectedActive;
   DateTime? selectedDate;
+  bool showFilter = false;
 
   InputDecoration _dropdownDecoration() {
     return InputDecoration(
@@ -87,37 +88,56 @@ class _AssetListPageState extends State<AssetListPage> {
           final filtered = assets.where((e) {
             final name = e['name']?.toString().toLowerCase() ?? '';
             final location = e['location']?.toString().toLowerCase() ?? '';
-            final type = e['type']?.toString();
+            final branch = e['branch']?.toString().toLowerCase() ?? '';
+            final type = e['type']?.toString().toLowerCase() ?? '';
             final active = e['active'];
             final expdateStr = e['expdate']?.toString();
 
+            final key = keyword.toLowerCase();
+
             final matchKeyword =
                 keyword.isEmpty ||
-                name.contains(keyword.toLowerCase()) ||
-                location.contains(keyword.toLowerCase());
+                name.contains(key) ||
+                location.contains(key) ||
+                branch.contains(key) ||
+                type.contains(key);
 
-            final matchType = selectedType == null || type == selectedType;
+            final matchType =
+                selectedType == null ||
+                selectedType == "ทั้งหมด" ||
+                type == selectedType;
 
             final matchActive =
-                selectedActive == null || active == selectedActive;
+                selectedActive == null ||
+                selectedActive == -1 ||
+                active == selectedActive;
 
             bool matchDate = true;
 
-            if (selectedDate != null && expdateStr != null) {
-              try {
-                final parts = expdateStr.split(' ')[0].split('/');
-                final date = DateTime(
-                  int.parse(parts[2]),
-                  int.parse(parts[1]),
-                  int.parse(parts[0]),
-                );
-
-                matchDate =
-                    date.year == selectedDate!.year &&
-                    date.month == selectedDate!.month &&
-                    date.day == selectedDate!.day;
-              } catch (_) {
+            if (selectedDate != null) {
+              // ❌ ถ้า expdate เป็น null ไม่ต้องแสดง
+              if (expdateStr == null || expdateStr.isEmpty) {
                 matchDate = false;
+              } else {
+                try {
+                  final parts = expdateStr.split(' ')[0].split('/');
+
+                  final buddhistYear = int.parse(parts[2]);
+                  final christianYear = buddhistYear - 543; // แปลง พ.ศ. -> ค.ศ.
+
+                  final date = DateTime(
+                    christianYear,
+                    int.parse(parts[1]),
+                    int.parse(parts[0]),
+                  );
+
+                  matchDate =
+                      date.year == selectedDate!.year &&
+                      date.month == selectedDate!.month &&
+                      date.day == selectedDate!.day;
+                } catch (_) {
+                  matchDate = false;
+                }
               }
             }
 
@@ -236,86 +256,212 @@ class _AssetListPageState extends State<AssetListPage> {
         .toSet()
         .toList();
 
+    types.insert(0, "ทั้งหมด");
+
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// 🔎 ค้นหา name + location
-          TextField(
-            onChanged: (v) => setState(() => keyword = v),
-            decoration: InputDecoration(
-              hintText: 'ค้นหา ชื่อ / สถานที่',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          /// 📦 ประเภท + ✅ สถานะ
+          /// 🔍 ช่องค้นหา + ปุ่มตัวกรอง
           Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: selectedType,
-                  hint: const Text("เลือกประเภท"),
-                  items: types
-                      .map(
-                        (type) =>
-                            DropdownMenuItem(value: type, child: Text(type!)),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedType = v),
-                  decoration: _dropdownDecoration(),
+                child: TextField(
+                  onChanged: (v) => setState(() => keyword = v),
+                  decoration: InputDecoration(
+                    hintText: 'ค้นหา',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<int>(
-                  value: selectedActive,
-                  hint: const Text("เลือกสถานะ"),
-                  items: const [
-                    DropdownMenuItem(value: 1, child: Text("ใช้งาน")),
-                    DropdownMenuItem(value: 0, child: Text("ไม่ได้ใช้งาน")),
-                  ],
-                  onChanged: (v) => setState(() => selectedActive = v),
-                  decoration: _dropdownDecoration(),
+              const SizedBox(width: 8),
+
+              /// 🔘 ปุ่มตัวกรอง
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    showFilter = !showFilter;
+                  });
+                },
+                icon: Icon(
+                  showFilter ? Icons.close : Icons.filter_list,
+                  size: 18,
+                ),
+                label: Text(
+                  showFilter ? "ปิด" : "ตัวกรอง",
+                  style: const TextStyle(fontSize: 14),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0047AB),
+                  foregroundColor: Colors.white, // 👈 สีตัวอักษร + icon
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
-
-          GestureDetector(
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: selectedDate ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(3100),
-              );
-
-              if (picked != null) {
-                setState(() => selectedDate = picked);
-              }
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          /// =========================
+          /// 🔽 เมนูตัวกรอง (พับได้)
+          /// =========================
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 300),
+            crossFadeState: showFilter
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Container(
+              margin: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
-                selectedDate == null
-                    ? "เลือกวันหมดอายุ"
-                    : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+              child: Column(
+                children: [
+                  /// ประเภท + สถานะ
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: selectedType,
+                          hint: const Text("เลือกประเภท"),
+                          items: types
+                              .map(
+                                (type) => DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type!),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) => setState(() => selectedType = v),
+                          decoration: _dropdownDecoration(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          value: selectedActive,
+                          hint: const Text("เลือกสถานะ"),
+                          items: const [
+                            DropdownMenuItem(value: -1, child: Text("ทั้งหมด")),
+                            DropdownMenuItem(value: 1, child: Text("ใช้งาน")),
+                            DropdownMenuItem(
+                              value: 0,
+                              child: Text("ไม่ได้ใช้งาน"),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            setState(() {
+                              selectedActive = v;
+                            });
+                          },
+                          decoration: _dropdownDecoration(),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  /// 📅 เลือกวันหมดอายุ
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        locale: const Locale('th', 'TH'),
+                        initialDate: selectedDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(3100),
+                      );
+
+                      if (picked != null) {
+                        setState(() {
+                          selectedDate = picked;
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        selectedDate == null
+                            ? "เลือกวันหมดอายุ"
+                            : "${selectedDate!.day.toString().padLeft(2, '0')}/"
+                                  "${selectedDate!.month.toString().padLeft(2, '0')}/"
+                                  "${selectedDate!.year + 543}",
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  /// ปุ่มค้นหา + ล้าง
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {});
+                            showFilter = false; // ปิดหลังค้นหา
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0047AB),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text("ค้นหา"),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              keyword = '';
+                              selectedType = null;
+                              selectedActive = null;
+                              selectedDate = null;
+                            });
+                          },
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text("ล้างตัวกรอง"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
+            secondChild: const SizedBox(),
           ),
+
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -356,12 +502,7 @@ class _AssetListPageState extends State<AssetListPage> {
               const SizedBox(height: 8),
               _chip('${item['branch']}', color: Colors.blue.shade100), // JRPE
               const SizedBox(height: 4),
-              // _chip(
-              //   item['active'] == 1 ? "active" : "inactive",
-              //   color: item['active'] == 1
-              //       ? Colors.green.shade300
-              //       : Colors.grey.shade400, // เปลี่ยนเป็นสีเทาเมื่อ inactive
-              // ),
+             
             ],
           ),
 
