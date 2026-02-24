@@ -67,16 +67,27 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                   : fireTypeItems.first,
             );
           }
-          // 1. ดึงค่าจาก API ถ้าเป็น null ให้เป็น String ว่าง
-          String apiDateValue = asset['expdate']?.toString() ?? '';
+          // --- ส่วนดึงค่าจาก API ---
+          dynamic rawExpDate = asset['expdate']; // เช่น "01/12/2569 00:00:00"
+          String displayDate = '';
+          String apiDateValue =
+              ''; // ตัวแปรสำหรับเก็บค่า format YYYY-MM-DD เพื่อส่ง API
 
-          // 2. จัดการตัวหนังสือที่จะโชว์ใน TextField (เช่น 01-01-2569)
-          String initialText = '';
-          if (apiDateValue.isNotEmpty) {
-            // ตัดเอาแค่ส่วนวันที่ "01/01/2569" มาเปลี่ยน / เป็น - เพื่อโชว์
-            initialText = apiDateValue.split(' ').first.replaceAll('/', '-');
+          if (rawExpDate != null && rawExpDate.toString().isNotEmpty) {
+            String dateOnly = rawExpDate.toString().split(
+              ' ',
+            )[0]; // "01/12/2569"
+            displayDate = dateOnly.replaceAll('/', '-'); // "01-12-2569"
+
+            // แปลงจาก พ.ศ. เป็น ค.ศ. เบื้องต้นเพื่อเก็บไว้ใน apiDateValue (เผื่อไม่ได้กดเปลี่ยนวันที่)
+            List<String> parts = dateOnly.split('/');
+            if (parts.length == 3) {
+              int yearCE = int.parse(parts[2]) - 543; // 2569 - 543 = 2026
+              apiDateValue = "$yearCE-${parts[1]}-${parts[0]}"; // "2026-12-01"
+            }
           }
-          final expDateCtrl = TextEditingController(text: initialText);
+
+          final expDateCtrl = TextEditingController(text: displayDate);
 
           ValueNotifier<int> activeNotifier = ValueNotifier<int>(
             asset['active'] == 0 ? 0 : 1,
@@ -213,101 +224,56 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                       ),
 
                       /// EXP DATE
-                      _customRowField(
-                        icon: Icons.calendar_month,
-                        label: 'วันหมดอายุ :',
-                        child: TextField(
-                          controller: expDateCtrl,
-                          readOnly: true,
-                          textAlign: TextAlign.center,
-                          decoration: _innerInputDecoration(),
-                          onTap: () async {
-                            DateTime initialDate = DateTime.now();
+                      if (categoryName.contains('ถังดับเพลิง'))
+                        _customRowField(
+                          icon: Icons.calendar_month,
+                          label: 'วันหมดอายุ :',
+                          child: TextField(
+                            controller: expDateCtrl,
+                            readOnly: true,
+                            textAlign: TextAlign.center,
+                            decoration: _innerInputDecoration(),
+                            onTap: () async {
+                              DateTime initialDate = DateTime.now();
 
-                            // 1. ถ้ามีค่าเดิม (เช่น "01/01/2569 00:00:00") ให้แปลงเป็น DateTime เพื่อเปิดปฏิทินให้ถูกปี
-                            if (apiDateValue.isNotEmpty) {
-                              try {
-                                List<String> dateParts = apiDateValue
-                                    .split(' ')[0]
-                                    .split('/');
-                                int d = int.parse(dateParts[0]);
-                                int m = int.parse(dateParts[1]);
-                                int y = int.parse(
-                                  dateParts[2],
-                                ); // ใช้ 2569 ตรงๆ เพราะเราใช้ปฏิทินไทย
-                                initialDate = DateTime(y, m, d);
-                              } catch (e) {
-                                initialDate = DateTime.now();
+                              // ถ้ามีค่าเดิมอยู่ ให้พยายามตั้งค่าเริ่มต้นในปฏิทินตามค่านั้น
+                              if (apiDateValue.isNotEmpty) {
+                                try {
+                                  initialDate = DateTime.parse(apiDateValue);
+                                } catch (e) {
+                                  initialDate = DateTime.now();
+                                }
                               }
-                            }
 
-                            final pickedDate = await showDatePicker(
-                              context: context,
-                              initialDate: initialDate,
-                              firstDate: DateTime(
-                                2500,
-                              ), // ตั้งให้ครอบคลุมปี พ.ศ.
-                              lastDate: DateTime(4000),
-                              // ไม่ต้องใส่ locale ตรงนี้แล้วก็ได้ เพราะใน main.dart กำหนดไว้แล้ว
-                            );
+                              final pickedDate = await showDatePicker(
+                                context: context,
+                                initialDate: initialDate,
+                                firstDate: DateTime(2024),
+                                lastDate: DateTime(2500),
+                              );
 
-                            if (pickedDate != null) {
-                              // 2. ใช้ปีจาก pickedDate ได้เลย (มันจะเป็น 2569 อยู่แล้ว)
-                              // ❌ ห้ามบวก 543 เพิ่มเด็ดขาด
-                              final int year = pickedDate.year;
-                              final String day = pickedDate.day
-                                  .toString()
-                                  .padLeft(2, '0');
-                              final String month = pickedDate.month
-                                  .toString()
-                                  .padLeft(2, '0');
+                              if (pickedDate != null) {
+                                // 1. เตรียมค่าสำหรับโชว์ (แปลงเป็น พ.ศ.)
+                                final int yearBE = pickedDate.year + 543;
+                                final String m = pickedDate.month
+                                    .toString()
+                                    .padLeft(2, '0');
+                                final String d = pickedDate.day
+                                    .toString()
+                                    .padLeft(2, '0');
 
-                              // ✅ อัปเดต UI (โชว์ 01-01-2569)
-                              expDateCtrl.text = '$day-$month-$year';
+                                // อัปเดต UI ให้ User เห็นเป็น พ.ศ. (เช่น 01-12-2569)
+                                expDateCtrl.text = '$d-$m-$yearBE';
 
-                              // ✅ เตรียมค่าส่ง API (เก็บ 01/01/2569 00:00:00)
-                              apiDateValue = '$day/$month/$year 00:00:00';
-                            }
-                          },
+                                // 2. เตรียมค่าสำหรับส่ง API (ใช้ ค.ศ. ตามที่เลือกมา)
+                                final String yearCE = pickedDate.year
+                                    .toString();
+                                apiDateValue =
+                                    '$yearCE-$m-$d'; // ได้ "2026-12-01"
+                              }
+                            },
+                          ),
                         ),
-                      ),
-
-                      /// STATUS ACTIVE
-                      ValueListenableBuilder<int>(
-                        valueListenable: activeNotifier,
-                        builder: (context, currentStatus, _) {
-                          return _customRowField(
-                            icon: Icons.toggle_on,
-                            label: 'สถานะ :',
-                            child: SizedBox(
-                              width: 130, // 👈 ทำให้เล็กลง
-                              height: 35,
-                              child: DropdownButtonFormField<int>(
-                                initialValue: currentStatus,
-                                isExpanded: true,
-                                decoration: _innerInputDecoration(
-                                  hasIcon: false,
-                                ),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 1,
-                                    child: Text('ใช้งาน'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 0,
-                                    child: Text('ไม่ได้ใช้งาน'),
-                                  ),
-                                ],
-                                onChanged: (v) {
-                                  if (v != null) {
-                                    activeNotifier.value = v;
-                                  }
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                       const SizedBox(height: 20),
 
                       /// ACTIONS
@@ -340,18 +306,26 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                             icon: Icons.edit,
                             color: const Color(0xFFFFC107),
                             onPressed: () async {
-                              final navigator = Navigator.of(context);
+                              // 1. เก็บ Navigator และ ScaffoldMessenger (ถ้าต้องใช้) ไว้ก่อน await
+                              final navigator = Navigator.of(
+                                context,
+                              ); // เก็บ navigator ไว้ก่อน
 
                               AppAlert.successConfirm(
                                 context,
                                 "คุณต้องการแก้ไขข้อมูลอุปกรณ์นี้หรือไม่?",
                                 onConfirm: () async {
-                                  final data = {
+                                  // เตรียมข้อมูล
+                                  final Map<String, dynamic> data = {
                                     'name': nameCtrl.text,
                                     'location': locationCtrl.text,
                                     'active': activeNotifier.value,
-                                    'expdate': apiDateValue,
                                   };
+
+                                  if (categoryName.contains('ถังดับเพลิง') &&
+                                      apiDateValue.isNotEmpty) {
+                                    data['expdate'] = apiDateValue;
+                                  }
 
                                   if (fireTypeNotifier != null) {
                                     data['firetype'] = fireTypeNotifier.value;
@@ -360,32 +334,38 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                                   // 🔄 แสดง Loading
                                   AppAlert.loading(context);
 
+                                  // 🚀 ส่งข้อมูลไปที่ API
                                   final success = await ApiService.updateAsset(
                                     assetId,
                                     data,
                                   );
 
+                                  // 🛑 ตรวจสอบว่า Widget ยังอยู่ในหน้าจอไหม
                                   if (!context.mounted) return;
 
-                                  AppAlert.close(context); // ปิด loading
+                                  // ปิด Loading
+                                  AppAlert.close(context);
 
                                   if (success) {
-                                    // ✅ แสดง success 1 วิ
                                     AppAlert.success(
                                       context,
                                       "แก้ไขข้อมูลสำเร็จ",
                                     );
-
-                                    // ⏳ รอ 1 วินาทีแล้วค่อย pop
-                                    Future.delayed(
-                                      const Duration(seconds: 1),
-                                      () {
-                                        if (context.mounted) {
-                                          navigator.pop(true);
-                                        }
-                                      },
+                                    await Future.delayed(
+                                      const Duration(milliseconds: 800),
                                     );
+
+                                    // ⏳ รอให้ User เห็นเครื่องหมายถูกสักครู่ (500ms - 1s) แล้วกลับหน้าก่อนหน้า
+                                    await Future.delayed(
+                                      const Duration(milliseconds: 800),
+                                    );
+
+                                    if (navigator.canPop()) {
+                                      // ส่งค่า true กลับไปเพื่อให้หน้าต้นทางรู้ว่ามีการอัปเดตข้อมูล (ไว้ใช้สั่ง refresh หน้าหลัก)
+                                      navigator.pop(true);
+                                    }
                                   } else {
+                                    // ❌ แจ้งเตือนเมื่อผิดพลาด
                                     AppAlert.error(
                                       context,
                                       "ไม่สามารถแก้ไขข้อมูลได้",

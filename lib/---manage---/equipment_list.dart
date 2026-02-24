@@ -330,26 +330,27 @@ class _AssetListPageState extends State<AssetListPage> {
                   /// ประเภท + สถานะ
                   Row(
                     children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: selectedType,
-                          hint: const Text("เลือกประเภท"),
-                          items: types
-                              .map(
-                                (type) => DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type!),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => selectedType = v),
-                          decoration: _dropdownDecoration(),
+                      if (widget.categoryId == 0 || widget.categoryId == 1)
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: selectedType,
+                            hint: const Text("เลือกประเภท"),
+                            items: types
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type!),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) => setState(() => selectedType = v),
+                            decoration: _dropdownDecoration(),
+                          ),
                         ),
-                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: selectedActive,
+                          initialValue: selectedActive,
                           hint: const Text("เลือกสถานะ"),
                           items: const [
                             DropdownMenuItem(value: -1, child: Text("ทั้งหมด")),
@@ -373,41 +374,46 @@ class _AssetListPageState extends State<AssetListPage> {
                   const SizedBox(height: 12),
 
                   /// 📅 เลือกวันหมดอายุ
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        locale: const Locale('th', 'TH'),
-                        initialDate: selectedDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(3100),
-                      );
+                  /// 📅 เลือกวันหมดอายุ (เฉพาะ categoryId = 0)
+                  if (widget.categoryId == 0) ...[
+                    const SizedBox(height: 12),
 
-                      if (picked != null) {
-                        setState(() {
-                          selectedDate = picked;
-                        });
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        selectedDate == null
-                            ? "เลือกวันหมดอายุ"
-                            : "${selectedDate!.day.toString().padLeft(2, '0')}/"
-                                  "${selectedDate!.month.toString().padLeft(2, '0')}/"
-                                  "${selectedDate!.year + 543}",
+                    GestureDetector(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          locale: const Locale('th', 'TH'),
+                          initialDate: selectedDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(3100),
+                        );
+
+                        if (picked != null) {
+                          setState(() {
+                            selectedDate = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          selectedDate == null
+                              ? "เลือกวันหมดอายุ"
+                              : "${selectedDate!.day.toString().padLeft(2, '0')}/"
+                                    "${selectedDate!.month.toString().padLeft(2, '0')}/"
+                                    "${selectedDate!.year + 543}",
+                        ),
                       ),
                     ),
-                  ),
+                  ],
 
                   const SizedBox(height: 16),
 
@@ -502,7 +508,6 @@ class _AssetListPageState extends State<AssetListPage> {
               const SizedBox(height: 8),
               _chip('${item['branch']}', color: Colors.blue.shade100), // JRPE
               const SizedBox(height: 4),
-             
             ],
           ),
 
@@ -521,7 +526,7 @@ class _AssetListPageState extends State<AssetListPage> {
                 const SizedBox(height: 6),
 
                 // ประเภทอุปกรณ์ (แสดงเฉพาะเมื่อเป็น fireAsset)
-                if (fireAsset) ...[
+                if (widget.categoryId == 0 || widget.categoryId == 1) ...[
                   Builder(
                     builder: (context) {
                       final type = item['type']?.toString().toLowerCase();
@@ -565,7 +570,7 @@ class _AssetListPageState extends State<AssetListPage> {
                 ),
                 const SizedBox(height: 4),
 
-                if (item['expdate'] != null) ...[
+                if (widget.categoryId == 0) ...[
                   Row(
                     children: [
                       const Icon(
@@ -574,9 +579,14 @@ class _AssetListPageState extends State<AssetListPage> {
                         color: Colors.orange,
                       ),
                       const SizedBox(width: 4),
+                      // 📍 แก้ไขตรงส่วน Row แสดงวันหมดอายุ
                       Expanded(
                         child: Text(
-                          "วันหมดอายุ ${item['expdate'].toString().split(' ')[0]}",
+                          // เช็คว่า item['expdate'] เป็น null หรือว่างไหม
+                          (item['expdate'] != null &&
+                                  item['expdate'].toString().isNotEmpty)
+                              ? "วันหมดอายุ ${item['expdate'].toString().split(' ')[0]}"
+                              : "วันหมดอายุ -", // ถ้าเป็น null ให้แสดง -
                           style: const TextStyle(fontSize: 15),
                         ),
                       ),
@@ -634,7 +644,14 @@ class _AssetListPageState extends State<AssetListPage> {
                     context,
                     item['id'],
                   );
-                  if (updated == true) setState(() {});
+
+                  // ✅ ถ้ามีการแก้ไขสำเร็จ (ได้รับค่า true กลับมา)
+                  if (updated == true) {
+                    setState(() {
+                      // 🔥 ต้องสั่งดึงข้อมูลจาก API ใหม่ลงตัวแปรเดิมที่ FutureBuilder ใช้อยู่
+                      _assetFuture = ApiService.getAssetList(widget.categoryId);
+                    });
+                  }
                 },
                 icon: Icons.edit,
                 label: 'แก้ไข',
