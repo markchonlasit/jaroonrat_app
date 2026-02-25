@@ -151,6 +151,7 @@ class _InspectLightPageState extends State<InspectLightPage> {
     );
   }
 
+  // ignore: strict_top_level_inference
   Widget _checkCard(item, id) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

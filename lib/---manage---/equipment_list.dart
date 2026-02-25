@@ -434,7 +434,7 @@ class _AssetListPageState extends State<AssetListPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text("ค้นหา"),
+                          child: const Text("ปิดตัวกรอง"),
                         ),
                       ),
                       const SizedBox(width: 12),

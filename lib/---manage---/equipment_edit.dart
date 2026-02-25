@@ -223,6 +223,43 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                         ),
                       ),
 
+                      /// STATUS ACTIVE
+                      ValueListenableBuilder<int>(
+                        valueListenable: activeNotifier,
+                        builder: (context, currentStatus, _) {
+                          return _customRowField(
+                            icon: Icons.toggle_on,
+                            label: 'สถานะ :',
+                            child: SizedBox(
+                              width: 130, // 👈 ทำให้เล็กลง
+                              height: 35,
+                              child: DropdownButtonFormField<int>(
+                                initialValue: currentStatus,
+                                isExpanded: true,
+                                decoration: _innerInputDecoration(
+                                  hasIcon: false,
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 1,
+                                    child: Text('ใช้งาน'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 0,
+                                    child: Text('ไม่ใช้งาน'),
+                                  ),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    activeNotifier.value = v;
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                     
                       /// EXP DATE
                       if (categoryName.contains('ถังดับเพลิง'))
                         _customRowField(

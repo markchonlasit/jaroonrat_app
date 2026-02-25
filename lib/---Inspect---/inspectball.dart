@@ -87,8 +87,8 @@ class _InspectBallPageState extends State<InspectBallPage> {
 
       if (response.statusCode == 200) {
         final respStr = await response.stream.bytesToString();
-        print('=== Upload Response ===');
-        print(respStr);
+        debugPrint('=== Upload Response ===');
+        debugPrint(respStr);
         
         try {
           final json = jsonDecode(respStr);
@@ -98,13 +98,13 @@ class _InspectBallPageState extends State<InspectBallPage> {
         }
       } else {
         final errStr = await response.stream.bytesToString();
-        print('Upload failed with status: ${response.statusCode}');
-        print('=== Error Body (สาเหตุที่แท้จริง) ===');
-        print(errStr); 
+        debugPrint('Upload failed with status: ${response.statusCode}');
+        debugPrint('=== Error Body (สาเหตุที่แท้จริง) ===');
+        debugPrint(errStr); 
         return null;
       }
     } catch (e) {
-      print('Upload exception: $e');
+      debugPrint('Upload exception: $e');
       return null;
     }
   }
@@ -144,8 +144,8 @@ class _InspectBallPageState extends State<InspectBallPage> {
         }).toList(),
       };
 
-      print('=== Payload for submitAudit ===');
-      print(jsonEncode(payload));
+      debugPrint('=== Payload for submitAudit ===');
+      debugPrint(jsonEncode(payload));
 
       // 3. ส่งข้อมูลทั้งหมดไปบันทึก
       final res = await http.post(
@@ -157,8 +157,8 @@ class _InspectBallPageState extends State<InspectBallPage> {
         body: jsonEncode(payload),
       );
 
-      print('=== submitAudit Status ===');
-      print(res.statusCode);
+      debugPrint('=== submitAudit Status ===');
+      debugPrint(res.statusCode.toString());
 
       if (res.statusCode == 200) {
         if (mounted) Navigator.pop(context);
