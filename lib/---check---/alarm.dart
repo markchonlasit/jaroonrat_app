@@ -15,8 +15,10 @@ class AlarmPage extends StatefulWidget {
 class _AlarmPageState extends State<AlarmPage> {
   bool isLoading = true;
   String errorMessage = '';
-  List fireList = [];
+  List<dynamic> alarmList = [];
+
   String keyword = '';
+  int statusFilter = 0; // 0=ทั้งหมด,1=ใช้งานอยู่,2=ไม่พร้อม
 
   final String apiUrl =
       'https://api.jaroonrat.com/safetyaudit/api/assetlist/3';
@@ -24,10 +26,10 @@ class _AlarmPageState extends State<AlarmPage> {
   @override
   void initState() {
     super.initState();
-    fetchFire();
+    fetchAlarm();
   }
 
-  Future<void> fetchFire() async {
+  Future<void> fetchAlarm() async {
     try {
       final response = await http.get(
         Uri.parse(apiUrl),
@@ -39,9 +41,8 @@ class _AlarmPageState extends State<AlarmPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
         setState(() {
-          fireList = data['asset'] ?? [];
+          alarmList = data['asset'] ?? [];
           isLoading = false;
         });
       } else {
@@ -58,50 +59,201 @@ class _AlarmPageState extends State<AlarmPage> {
     }
   }
 
-  // ✅ SEARCH BAR
+  List<dynamic> get filteredList {
+    final search = keyword.toLowerCase();
+
+    return alarmList.where((item) {
+      final name = (item['name'] ?? '').toString().toLowerCase();
+      final branch = (item['branch'] ?? '').toString().toLowerCase();
+      final location = (item['location'] ?? '').toString().toLowerCase();
+      final active = item['active'] ?? 0;
+
+      final matchSearch =
+          name.contains(search) ||
+          branch.contains(search) ||
+          location.contains(search);
+
+      final matchStatus = statusFilter == 0
+          ? true
+          : statusFilter == 1
+              ? active == 1
+              : active != 1;
+
+      return matchSearch && matchStatus;
+    }).toList();
+  }
+
   Widget _searchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: TextField(
+        onChanged: (value) {
+          setState(() {
+            keyword = value;
+          });
+        },
+        decoration: InputDecoration(
+          hintText: 'ค้นหา',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusFilter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Expanded(
-            child: TextField(
-              onChanged: (v) => setState(() => keyword = v),
-              decoration: InputDecoration(
-                hintText: 'ค้นหา',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
+          _buildFilterButton('ทั้งหมด', 0),
+          const SizedBox(width: 8),
+          _buildFilterButton('ใช้งานอยู่', 1),
+          const SizedBox(width: 8),
+          _buildFilterButton('ไม่พร้อม', 2),
         ],
       ),
     );
   }
 
+  Widget _buildFilterButton(String text, int value) {
+    final isSelected = statusFilter == value;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            statusFilter = value;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.orange : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.orange),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            text,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.orange,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(dynamic item) {
+    final isActive = item['active'] == 1;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InspectAlarmPage(
+              assetId: item['id'],
+              assetName: item['name'] ?? '-',
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.orange,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.warning_amber,
+                color: Colors.orange,
+                size: 30,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['name'] ?? '-',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text('ID: ${item['id'] ?? '-'}'),
+                  Text('สาขา: ${item['branch'] ?? '-'}'),
+                  Text('วันหมดอายุ: ${item['expdate'] ?? '-'}'),
+                  Text('สถานที่: ${item['location'] ?? '-'}'),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        isActive
+                            ? Icons.check_circle
+                            : Icons.cancel,
+                        size: 16,
+                        color:
+                            isActive ? Colors.green : Colors.red,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isActive
+                            ? 'ใช้งานอยู่'
+                            : 'ไม่พร้อมใช้งาน',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              isActive ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ filter ตาม keyword
-    final filteredList = fireList.where((item) {
-      final name = (item['name'] ?? '').toString().toLowerCase();
-      final location = (item['location'] ?? '').toString().toLowerCase();
-      final branch = (item['branch'] ?? '').toString().toLowerCase();
-      final id = (item['id'] ?? '').toString();
-
-      return name.contains(keyword.toLowerCase()) ||
-          location.contains(keyword.toLowerCase()) ||
-          branch.contains(keyword.toLowerCase()) ||
-          id.contains(keyword);
-    }).toList();
-
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 255, 110, 64),
+        backgroundColor: const Color.fromARGB(255, 255, 152, 0),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -110,7 +262,6 @@ class _AlarmPageState extends State<AlarmPage> {
           'สัญญาณแจ้งเหตุทั้งหมด',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -130,7 +281,6 @@ class _AlarmPageState extends State<AlarmPage> {
           ),
         ],
       ),
-
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
@@ -142,103 +292,19 @@ class _AlarmPageState extends State<AlarmPage> {
                 )
               : Column(
                   children: [
-                    _searchBar(), // ✅ เพิ่ม searchbar
+                    _searchBar(),
+                    const SizedBox(height: 8),
+                    _statusFilter(),
+                    const SizedBox(height: 8),
                     Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: filteredList.length,
-                        itemBuilder: (context, index) {
-                          final item = filteredList[index];
-
-                          return InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => InspectAlarmPage(
-                                    assetId: item['id'],
-                                    assetName: item['name'] ?? '-',
-                                  ),
-                                ),
-                              );
-                            },
-
-                          child: Container(
-                             margin:const EdgeInsets.all(12),
-                              padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              border: Border.all(
-                                color: Colors.orange,
-                                width: 2,
-                              ),
+                      child: filteredList.isEmpty
+                          ? const Center(child: Text('ไม่พบข้อมูล'))
+                          : ListView.builder(
+                              itemCount: filteredList.length,
+                              itemBuilder: (context, index) {
+                                return _buildCard(filteredList[index]);
+                              },
                             ),
-                            child: Row(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber,
-                                  color: Colors.orange,
-                                  size: 40,
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['name'] ?? '-',
-                                        style:
-                                            const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                          'ID: ${item['id']}'),
-                                      Text(
-                                          'สาขา: ${item['branch']}'),
-                                      Text('วันหมดอายุ : ${item['expdate'] ?? '-'}'),
-                                      Text(
-                                          'สถานที่: ${item['location']}'),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            item['active'] == 1
-                                                ? Icons
-                                                    .check_circle
-                                                : Icons.cancel,
-                                            size: 16,
-                                            color:
-                                                item['active'] ==
-                                                        1
-                                                    ? Colors.green
-                                                    : Colors.red,
-                                          ),
-                                          const SizedBox(
-                                              width: 6),
-                                          Text(
-                                            item['active'] == 1
-                                                ? 'ใช้งานอยู่'
-                                                : 'ไม่พร้อมใช้งาน',
-                                     ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                     ),
                   ],
                 ),

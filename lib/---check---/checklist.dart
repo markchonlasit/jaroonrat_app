@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
-import '/services/api_services.dart';
 import 'package:flutter/cupertino.dart';
+import '/services/api_services.dart';
+import '/---check---/qr_scan_page.dart';
+
 import '/---check---/fire.dart' as fire;
-import '/---check---/ball.dart'; 
+import '/---check---/ball.dart';
 import '/---check---/fhc.dart';
 import '/---check---/alarm.dart';
 import '/---check---/sand.dart';
 import '/---check---/eyewash.dart';
 import '/---check---/light.dart';
 
-class checklistPage extends StatelessWidget {
-  const checklistPage({super.key});
+class ChecklistPage extends StatelessWidget {
+  const ChecklistPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      /// =========================
-      /// 🔹 APP BAR
-      /// =========================
+      /// ================= APP BAR =================
       appBar: AppBar(
         backgroundColor: const Color(0xFF0047AB),
         leading: IconButton(
@@ -36,16 +36,43 @@ class checklistPage extends StatelessWidget {
         ),
       ),
 
-      /// =========================
-      /// 🔹 BODY
-      /// =========================
+      /// ================= BODY =================
       body: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Column(
           children: [
-            const SizedBox(height: 30),
+            const SizedBox(height: 10),
 
-            /// 🔹 ดึงข้อมูลจาก API
+            /// 🔥 ปุ่มสแกน QR (อยู่บนสุด)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0047AB),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const QrScanPage(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+                label: const Text(
+                  "สแกน QR เพื่อเข้าถึงอุปกรณ์",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            /// 🔹 โหลดข้อมูลจาก API
             Expanded(
               child: FutureBuilder<List<dynamic>>(
                 future: ApiService.getCategory(),
@@ -70,7 +97,7 @@ class checklistPage extends StatelessWidget {
                   return Column(
                     children: [
                       _HeaderCard(total: total),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 25),
 
                       Expanded(
                         child: ListView.builder(
@@ -78,76 +105,13 @@ class checklistPage extends StatelessWidget {
                           itemBuilder: (context, index) {
                             final item = categories[index];
                             final int id = item['id'];
+                            final String name = item['name'];
 
                             return InkWell(
-                              onTap: () {
-                                if (id == 0) {
-                                  // 🔥 ถังดับเพลิง
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const fire.FirePage(),
-                                    ),
-                                  );
-                                } else if (id == 1) {
-                                  // 🧯 ลูกบอลดับเพลิง
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const BallPage(),
-                                    ),
-                                  );
-                                } else if (id == 2) {
-                                  // 🚒 FHC
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const FhcPage(),
-                                    ),
-                                  );
-                                }
-                                else if (id == 3) {
-                                  // 🚨 สัญญาณเตือนภัย
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const AlarmPage(),
-                                    ),
-                                  );
-                                }
-                                else if (id == 4) {
-                                  // 🏖️ ทรายดับเพลิง
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const SandPage(),
-                                    ),
-                                  );
-                                }
-                                else if (id == 6) {
-                                  // 🚰 ที่ล้างตา
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const EyewashPage(),
-                                    ),
-                                  );
-                                }
-                                else if (id == 7) {
-                                  // 💡 ไฟฉุกเฉิน
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const LightPage(),
-                                    ),
-                                  );
-                                }
-                              },
+                              onTap: () => _navigateToCategory(context, id),
                               child: _EquipmentItem(
                                 icon: _getIconByCategory(id),
-                                title: item['name'],
+                                title: name,
                                 borderColor: _getColorByCategory(id),
                               ),
                             );
@@ -165,9 +129,27 @@ class checklistPage extends StatelessWidget {
     );
   }
 
-  /// =========================
-  /// 🔹 ICON ตามประเภทอุปกรณ์
-  /// =========================
+  /// ================= NAVIGATION =================
+  void _navigateToCategory(BuildContext context, int id) {
+    final Map<int, Widget> pages = {
+      0: const fire.FirePage(),
+      1: const BallPage(),
+      2: const FhcPage(),
+      3: const AlarmPage(),
+      4: const SandPage(),
+      6: const EyewashPage(),
+      7: const LightPage(),
+    };
+
+    if (pages.containsKey(id)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => pages[id]!),
+      );
+    }
+  }
+
+  /// ================= ICON =================
   IconData _getIconByCategory(int id) {
     switch (id) {
       case 0:
@@ -189,9 +171,7 @@ class checklistPage extends StatelessWidget {
     }
   }
 
-  /// =========================
-  /// 🔹 สีตามประเภทอุปกรณ์
-  /// =========================
+  /// ================= COLOR =================
   Color _getColorByCategory(int id) {
     switch (id) {
       case 0:
@@ -214,9 +194,7 @@ class checklistPage extends StatelessWidget {
   }
 }
 
-/// =========================
-/// 🔹 HEADER CARD
-/// =========================
+/// ================= HEADER =================
 class _HeaderCard extends StatelessWidget {
   final int total;
 
@@ -271,9 +249,7 @@ class _HeaderCard extends StatelessWidget {
   }
 }
 
-/// =========================
-/// 🔹 EQUIPMENT ITEM (เดิม)
-/// =========================
+/// ================= ITEM =================
 class _EquipmentItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -297,16 +273,14 @@ class _EquipmentItem extends StatelessWidget {
         border: Border.all(color: Colors.black, width: 2),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 48, color: borderColor),
           const SizedBox(width: 18),
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
+          Expanded(
             child: Text(
               title,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                  fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
         ],

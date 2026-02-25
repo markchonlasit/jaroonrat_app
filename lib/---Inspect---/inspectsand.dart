@@ -126,7 +126,7 @@ class _InspectSandPageState extends State<InspectSandPage> {
   Widget _buildUI() {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(backgroundColor: Colors.red, title: Text(widget.assetName)),
+      appBar: AppBar(backgroundColor: Colors.brown, title: Text(widget.assetName , style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(children: [
