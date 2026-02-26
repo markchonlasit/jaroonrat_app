@@ -26,7 +26,7 @@ class _BranchCardState extends State<BranchCard> {
 
       setState(() {
         branchName = branch.isNotEmpty
-            ? 'บริษัทจรูญรัตน์โปรดักส์จำกัด$branch'
+            ? 'บริษัทจรูญรัตน์โปรดักส์จำกัด $branch'
             : 'บริษัทจรูญรัตน์โปรดักส์จำกัด';
         loading = false;
       });

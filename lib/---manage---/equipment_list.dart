@@ -324,6 +324,7 @@ class _AssetListPageState extends State<AssetListPage> {
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade500),
               ),
               child: Column(
                 children: [
@@ -404,12 +405,23 @@ class _AssetListPageState extends State<AssetListPage> {
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          selectedDate == null
-                              ? "เลือกวันหมดอายุ"
-                              : "${selectedDate!.day.toString().padLeft(2, '0')}/"
-                                    "${selectedDate!.month.toString().padLeft(2, '0')}/"
-                                    "${selectedDate!.year + 543}",
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_month,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              selectedDate == null
+                                  ? "เลือกวันหมดอายุ"
+                                  : "${selectedDate!.day.toString().padLeft(2, '0')}/"
+                                        "${selectedDate!.month.toString().padLeft(2, '0')}/"
+                                        "${selectedDate!.year + 543}",
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          ],
                         ),
                       ),
                     ),
