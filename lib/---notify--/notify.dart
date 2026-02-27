@@ -734,6 +734,7 @@ class _NotificationPageState extends State<NotificationPage> {
     bool isSelected = selectedStatusCategory == statusKey;
 
     // กำหนดสีพื้นหลังอ่อน
+    // ignore: deprecated_member_use
     final Color lightBackgroundColor = mainColor.withOpacity(0.15);
 
     return Expanded(
@@ -758,6 +759,7 @@ class _NotificationPageState extends State<NotificationPage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
+                  // ignore: deprecated_member_use
                   color: mainColor.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
