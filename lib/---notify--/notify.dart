@@ -240,7 +240,12 @@ class _NotificationPageState extends State<NotificationPage> {
                 const SizedBox(height: 10),
                 Expanded(
                   child: filtered.isEmpty
-                      ? const Center(child: Text("ไม่พบรายการที่ค้นหา", style: TextStyle(fontSize: 16)))
+                      ? const Center(
+                          child: Text(
+                            "ไม่พบรายการที่ค้นหา",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        )
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           itemCount: filtered.length,
@@ -314,10 +319,6 @@ class _NotificationPageState extends State<NotificationPage> {
       ),
     );
   }
-
- 
-
-  
 
   /// =========================
   /// SEARCH BAR & FILTER SECTION
@@ -726,18 +727,19 @@ class _NotificationPageState extends State<NotificationPage> {
   Widget _statusBoxWithIcon(
     String title,
     int count,
-    Color color,
+    Color mainColor, // สีหลัก (ส้ม/เขียว/แดง)
     IconData icon,
     String statusKey,
   ) {
-    // เช็คว่าสถานะนี้กำลังถูกเลือกอยู่หรือไม่
     bool isSelected = selectedStatusCategory == statusKey;
+
+    // กำหนดสีพื้นหลังอ่อน
+    final Color lightBackgroundColor = mainColor.withOpacity(0.15);
 
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            // ถ้ากดตัวเดิมให้ล้างค่า (เป็น "ทั้งหมด") ถ้ากดตัวใหม่ให้เลือกตัวนั้น
             selectedStatusCategory = isSelected ? "ทั้งหมด" : statusKey;
           });
         },
@@ -745,54 +747,42 @@ class _NotificationPageState extends State<NotificationPage> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20), // ปรับความโค้งให้มนขึ้น
-            color: isSelected ? color : Colors.white, // ถ้าเลือกให้ใช้สีหลักเป็นพื้นหลัง
-            border: Border.all(
-              color: color ,
-              width: 1.5,
-            ),
-            boxShadow: [
-          
-            ],
+            borderRadius: BorderRadius.circular(20),
+            color: lightBackgroundColor, // ✅ พื้นหลังสีอ่อนตลอด
+            border: Border.all(color: mainColor, width: 1.5),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // วงกลมไอคอน
+              /// วงกลมไอคอน
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      // ignore: deprecated_member_use
-                      ? Colors.white.withOpacity(0.2) 
-                      // ignore: deprecated_member_use
-                      : color.withOpacity(0.1),
+                  color: mainColor.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon, 
-                  color: isSelected ? Colors.white : color, 
-                  size: 24
-                ),
+                child: Icon(icon, color: mainColor, size: 24),
               ),
               const SizedBox(height: 12),
-              // ชื่อสถานะ
+
+              /// ชื่อสถานะ
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? Colors.white : Colors.grey.shade800,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
                 ),
               ),
               const SizedBox(height: 4),
-              // ตัวเลขจำนวน
+
+              /// ตัวเลขจำนวน
               Text(
                 '$count',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.black,
+                  color: mainColor, // ✅ ตัวเลขเป็นสีเข้ม
                 ),
               ),
             ],
