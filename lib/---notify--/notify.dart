@@ -763,7 +763,9 @@ class _NotificationPageState extends State<NotificationPage> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: isSelected 
+                      // ignore: deprecated_member_use
                       ? Colors.white.withOpacity(0.2) 
+                      // ignore: deprecated_member_use
                       : color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
