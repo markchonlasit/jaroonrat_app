@@ -24,25 +24,7 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
   // Local styling helpers (inline so no extra files are required)
   static const double _pagePadding = 16.0;
 
-  InputDecoration _searchDecoration(String hint) => InputDecoration(
-    hintText: hint,
-    prefixIcon: const Icon(Icons.search),
-    filled: true,
-    fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: 14.0,
-      vertical: 12.0,
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide.none,
-    ),
-  );
 
-  BoxDecoration _dropdownBox() => BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(10),
-  );
 
   @override
   void initState() {
@@ -75,22 +57,45 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
   void applyFilter() {
     List<dynamic> temp = List.from(allLogs);
 
-    /// 🔎 Search
+    /// 🔎 SEARCH (เฉพาะ field ที่กำหนด)
     if (searchText.isNotEmpty) {
+      final keyword = searchText.toLowerCase();
+
       temp = temp.where((item) {
-        return item.toString().toLowerCase().contains(searchText.toLowerCase());
+        final name = (item['name'] ?? '').toString().toLowerCase();
+        final location = (item['location'] ?? '').toString().toLowerCase();
+        final firetype = (item['firetype'] ?? '').toString().toLowerCase();
+        final expdate = (item['expdate'] ?? '').toString().toLowerCase();
+        final active = (item['active'] ?? '').toString().toLowerCase();
+
+        return name.contains(keyword) ||
+            location.contains(keyword) ||
+            firetype.contains(keyword) ||
+            expdate.contains(keyword) ||
+            active.contains(keyword);
       }).toList();
     }
 
-    /// 📅 Period Filter
+    /// 📅 PERIOD FILTER (อ้างอิง createdate)
     if (selectedPeriod != "ทั้งหมด") {
       final now = DateTime.now();
 
       temp = temp.where((item) {
         try {
-          final date = DateFormat(
-            "dd/MM/yyyy HH:mm:ss",
-          ).parse(item["createdate"]);
+          final createdStr = item["createdate"] ?? "";
+
+          // parse dd/MM/yyyy HH:mm:ss (ปี พ.ศ.)
+          DateTime date = DateFormat("dd/MM/yyyy HH:mm:ss").parse(createdStr);
+
+          // แปลง พ.ศ. -> ค.ศ.
+          date = DateTime(
+            date.year - 543,
+            date.month,
+            date.day,
+            date.hour,
+            date.minute,
+            date.second,
+          );
 
           if (selectedPeriod == "วันนี้") {
             return date.year == now.year &&
@@ -106,9 +111,10 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
           if (selectedPeriod == "เดือนนี้") {
             return date.year == now.year && date.month == now.month;
           }
-        } catch (_) {
-          return true;
+        } catch (e) {
+          return false;
         }
+
         return true;
       }).toList();
     }
@@ -397,35 +403,7 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
             const SizedBox(height: 12),
 
             /// 🔎 Search + Period
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: _searchDecoration('ค้นหา'),
-                    onChanged: (value) {
-                      searchText = value;
-                      applyFilter();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: _dropdownBox(),
-                  child: DropdownButton<String>(
-                    value: selectedPeriod,
-                    underline: const SizedBox(),
-                    items: ["ทั้งหมด", "วันนี้", "สัปดาห์นี้", "เดือนนี้"]
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                        .toList(),
-                    onChanged: (value) {
-                      selectedPeriod = value!;
-                      applyFilter();
-                    },
-                  ),
-                ),
-              ],
-            ),
+           buildSearchSection(),
 
             const SizedBox(height: 16),
 
@@ -457,6 +435,72 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildSearchSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            // ignore: deprecated_member_use
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F7FA),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: TextField(
+                onChanged: (value) {
+                  searchText = value;
+                  applyFilter();
+                },
+                decoration: const InputDecoration(
+                  icon: Icon(Icons.search, color: Colors.grey),
+                  hintText: "ค้นหา...",
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F7FA),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: DropdownButton<String>(
+              value: selectedPeriod,
+              underline: const SizedBox(),
+              items: [
+                "ทั้งหมด",
+                "วันนี้",
+                "สัปดาห์นี้",
+                "เดือนนี้",
+              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedPeriod = value!;
+                });
+                applyFilter();
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
