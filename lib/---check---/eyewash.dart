@@ -18,7 +18,9 @@ class _EyewashPageState extends State<EyewashPage> {
   List<dynamic> eyewashList = [];
 
   String keyword = '';
-  int statusFilter = 0; // 0=ทั้งหมด, 1=ใช้งานอยู่, 2=ไม่พร้อม
+  int statusFilter = 0;
+
+  DateTime? selectedDate;
 
   final String apiUrl =
       'https://api.jaroonrat.com/safetyaudit/api/assetlist/6';
@@ -67,6 +69,7 @@ class _EyewashPageState extends State<EyewashPage> {
       final branch = (item['branch'] ?? '').toString().toLowerCase();
       final location = (item['location'] ?? '').toString().toLowerCase();
       final active = item['active'] ?? 0;
+      final exp = item['expdate'] ?? '';
 
       final matchSearch =
           name.contains(search) ||
@@ -79,8 +82,33 @@ class _EyewashPageState extends State<EyewashPage> {
               ? active == 1
               : active != 1;
 
-      return matchSearch && matchStatus;
+      final matchDate = selectedDate == null
+          ? true
+          : exp.toString().contains(
+              "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}");
+
+      return matchSearch && matchStatus && matchDate;
     }).toList();
+  }
+
+  Widget _countBar() {
+    final total = eyewashList.length;
+    final filtered = filteredList.length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: Colors.blue.withValues(alpha: 0.1),
+      child: Text(
+        filtered == total
+            ? "อุปกรณ์ทั้งหมด $total รายการ"
+            : "แสดง $filtered จากทั้งหมด $total รายการ",
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.blue,
+        ),
+      ),
+    );
   }
 
   Widget _searchBar() {
@@ -114,6 +142,46 @@ class _EyewashPageState extends State<EyewashPage> {
           const SizedBox(width: 8),
           _buildFilterButton('ไม่พร้อม', 2),
         ],
+      ),
+    );
+  }
+
+  Widget _datePicker() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GestureDetector(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: selectedDate ?? DateTime.now(),
+            firstDate: DateTime(1900),
+            lastDate: DateTime(3000),
+          );
+
+          if (picked != null) {
+            setState(() => selectedDate = picked);
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_today, color: Colors.blue),
+              const SizedBox(width: 10),
+              Text(
+                selectedDate == null
+                    ? "เลือกวันหมดอายุ"
+                    : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -189,7 +257,7 @@ class _EyewashPageState extends State<EyewashPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -219,22 +287,16 @@ class _EyewashPageState extends State<EyewashPage> {
                   Row(
                     children: [
                       Icon(
-                        isActive
-                            ? Icons.check_circle
-                            : Icons.cancel,
+                        isActive ? Icons.check_circle : Icons.cancel,
                         size: 16,
-                        color:
-                            isActive ? Colors.green : Colors.red,
+                        color: isActive ? Colors.green : Colors.red,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        isActive
-                            ? 'ใช้งานอยู่'
-                            : 'ไม่พร้อมใช้งาน',
+                        isActive ? 'ใช้งานอยู่' : 'ไม่พร้อมใช้งาน',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color:
-                              isActive ? Colors.green : Colors.red,
+                          color: isActive ? Colors.green : Colors.red,
                         ),
                       ),
                     ],
@@ -294,7 +356,11 @@ class _EyewashPageState extends State<EyewashPage> {
                   children: [
                     _searchBar(),
                     const SizedBox(height: 8),
+                    _countBar(),
+                    const SizedBox(height: 8),
                     _statusFilter(),
+                    const SizedBox(height: 8),
+                    _datePicker(),
                     const SizedBox(height: 8),
                     Expanded(
                       child: filteredList.isEmpty

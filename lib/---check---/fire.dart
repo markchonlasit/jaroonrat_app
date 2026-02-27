@@ -16,7 +16,8 @@ class FirePage extends StatefulWidget {
 class _FirePageState extends State<FirePage> {
   bool isLoading = true;
   String errorMessage = '';
-  List fireList = [];
+
+  List<Map<String, dynamic>> fireList = [];
 
   final TextEditingController searchController = TextEditingController();
 
@@ -44,8 +45,12 @@ class _FirePageState extends State<FirePage> {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        fireList = data['asset'] ?? [];
+        final Map<String, dynamic> data =
+            json.decode(response.body);
+
+        fireList = List<Map<String, dynamic>>.from(
+          data['asset'] ?? [],
+        );
       } else {
         errorMessage =
             'โหลดข้อมูลไม่สำเร็จ (${response.statusCode})';
@@ -72,6 +77,23 @@ class _FirePageState extends State<FirePage> {
     }
   }
 
+  Widget _countBar(int total, int filtered) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: Colors.red.withValues(alpha: 0.08),
+      child: Text(
+        filtered == total
+            ? "อุปกรณ์ทั้งหมด $total รายการ"
+            : "แสดง $filtered จากทั้งหมด $total รายการ",
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.red,
+        ),
+      ),
+    );
+  }
+
   Widget _buildChip(
       String text,
       String groupValue,
@@ -81,8 +103,8 @@ class _FirePageState extends State<FirePage> {
     return GestureDetector(
       onTap: () => onTap(text),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 18, vertical: 8),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? Colors.red : Colors.white,
           borderRadius: BorderRadius.circular(30),
@@ -91,8 +113,7 @@ class _FirePageState extends State<FirePage> {
         child: Text(
           text,
           style: TextStyle(
-            color:
-                isSelected ? Colors.white : Colors.red,
+            color: isSelected ? Colors.white : Colors.red,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -106,24 +127,16 @@ class _FirePageState extends State<FirePage> {
       child: Column(
         children: [
 
-          // 🔍 Search Field
           TextField(
             controller: searchController,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText: "ค้นหา",
-              prefixIcon:
-                  const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search),
               filled: true,
-              fillColor:
-                  Colors.grey.shade200,
-              contentPadding:
-                  const EdgeInsets.symmetric(
-                      vertical: 0,
-                      horizontal: 16),
+              fillColor: Colors.grey.shade200,
               border: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -131,7 +144,6 @@ class _FirePageState extends State<FirePage> {
 
           const SizedBox(height: 16),
 
-          // ประเภท
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -151,7 +163,6 @@ class _FirePageState extends State<FirePage> {
 
           const SizedBox(height: 16),
 
-          // สถานะ
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -167,44 +178,30 @@ class _FirePageState extends State<FirePage> {
 
           const SizedBox(height: 16),
 
-          // เลือกวันหมดอายุ
           GestureDetector(
             onTap: () async {
-              final picked =
-                  await showDatePicker(
+              final picked = await showDatePicker(
                 context: context,
-                initialDate:
-                    selectedDate ??
-                        DateTime.now(),
-                firstDate:
-                    DateTime(2000),
-                lastDate:
-                    DateTime(2100),
+                initialDate: selectedDate ?? DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
               );
 
               if (picked != null) {
-                setState(() =>
-                    selectedDate = picked);
+                setState(() => selectedDate = picked);
               }
             },
             child: Container(
               width: double.infinity,
               padding:
-                  const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color:
-                    Colors.grey.shade200,
-                borderRadius:
-                    BorderRadius.circular(14),
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.calendar_today,
-                    color: Colors.red,
-                  ),
+                  const Icon(Icons.calendar_today, color: Colors.red),
                   const SizedBox(width: 10),
                   Text(
                     selectedDate == null
@@ -222,62 +219,37 @@ class _FirePageState extends State<FirePage> {
 
   @override
   Widget build(BuildContext context) {
-    final keyword =
-        searchController.text.toLowerCase();
+    final keyword = searchController.text.toLowerCase();
 
-    final filteredList =
-        fireList.where((item) {
-
-      final name =
-          (item['name'] ?? '')
-              .toString()
-              .toLowerCase();
-      final branch =
-          (item['branch'] ?? '')
-              .toString()
-              .toLowerCase();
+    final List<Map<String, dynamic>> filteredList =
+        fireList.where((Map<String, dynamic> item) {
+      final name = (item['name'] ?? '').toString().toLowerCase();
+      final branch = (item['branch'] ?? '').toString().toLowerCase();
       final location =
-          (item['location'] ?? '')
-              .toString()
-              .toLowerCase();
-      final type =
-          (item['type'] ?? '')
-              .toString();
-      final active =
-          item['active'];
+          (item['location'] ?? '').toString().toLowerCase();
+      final type = (item['type'] ?? '').toString();
+      final active = item['active'];
 
-      final matchKeyword =
-          keyword.isEmpty ||
-              name.contains(keyword) ||
-              branch.contains(keyword) ||
-              location.contains(keyword);
+      final matchKeyword = keyword.isEmpty ||
+          name.contains(keyword) ||
+          branch.contains(keyword) ||
+          location.contains(keyword);
 
-      final matchType =
-          selectedType == "ทั้งหมด" ||
-              type.toLowerCase() ==
-                  selectedType.toLowerCase();
+      final matchType = selectedType == "ทั้งหมด" ||
+          type.toLowerCase() == selectedType.toLowerCase();
 
-      final matchStatus =
-          selectedStatus == "ทั้งหมด" ||
-              (selectedStatus ==
-                      "ใช้งานอยู่" &&
-                  active == 1) ||
-              (selectedStatus ==
-                      "ไม่พร้อม" &&
-                  active != 1);
+      final matchStatus = selectedStatus == "ทั้งหมด" ||
+          (selectedStatus == "ใช้งานอยู่" && active == 1) ||
+          (selectedStatus == "ไม่พร้อม" && active != 1);
 
-      final matchDate =
-          selectedDate == null ||
-              (item['expdate'] != null &&
-                  item['expdate']
-                      .toString()
-                      .contains(
-                          "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}"));
+      final matchDate = selectedDate == null ||
+          (item['expdate'] != null &&
+              item['expdate']
+                  .toString()
+                  .contains(
+                      "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}"));
 
-      return matchKeyword &&
-          matchType &&
-          matchStatus &&
-          matchDate;
+      return matchKeyword && matchType && matchStatus && matchDate;
     }).toList();
 
     return Scaffold(
@@ -286,21 +258,18 @@ class _FirePageState extends State<FirePage> {
         backgroundColor: Colors.red,
         title: const Text(
           'ถังดับเพลิงทั้งหมด',
-          style:
-              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history,
-                color: Colors.white),
+            icon: const Icon(Icons.history, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const AuditFireDetailPage(
-                    auditedAssetIds: [],
-                  ),
+                      const AuditFireDetailPage(auditedAssetIds: []),
                 ),
               );
             },
@@ -308,122 +277,83 @@ class _FirePageState extends State<FirePage> {
         ],
       ),
       body: isLoading
-          ? const Center(
-              child:
-                  CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                _countBar(fireList.length, filteredList.length),
                 _searchBar(),
 
                 Expanded(
                   child: filteredList.isEmpty
-                      ? const Center(
-                          child:
-                              Text("ไม่พบข้อมูล"))
+                      ? const Center(child: Text("ไม่พบข้อมูล"))
                       : ListView.builder(
-                          itemCount:
-                              filteredList.length,
-                          itemBuilder:
-                              (context, index) {
-                            final item =
-                                filteredList[
-                                    index];
+                          itemCount: filteredList.length,
+                          itemBuilder: (context, index) {
+                            final item = filteredList[index];
 
                             return InkWell(
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder:
-                                        (_) =>
-                                            InspectFirePage(
-                                      assetId:
-                                          item[
-                                              'id'],
+                                    builder: (_) => InspectFirePage(
+                                      assetId: item['id'] as int,
                                       assetName:
-                                          item['name'],
+                                          (item['name'] ?? '').toString(),
                                     ),
                                   ),
                                 );
                               },
                               child: Container(
-                                margin:
-                                    const EdgeInsets
-                                        .all(12),
-                                padding:
-                                    const EdgeInsets
-                                        .all(14),
-                                decoration:
-                                    BoxDecoration(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                              14),
+                                margin: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color:
-                                        _getColorByType(
-                                            item[
-                                                'type']),
+                                    color: _getColorByType(
+                                        (item['type'] ?? '').toString()),
                                     width: 2,
                                   ),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
-                                      Icons
-                                          .fire_extinguisher,
+                                      Icons.fire_extinguisher,
                                       size: 40,
-                                      color:
-                                          _getColorByType(
-                                              item[
-                                                  'type']),
+                                      color: _getColorByType(
+                                          (item['type'] ?? '').toString()),
                                     ),
-                                    const SizedBox(
-                                        width:
-                                            14),
+                                    const SizedBox(width: 14),
                                     Expanded(
-                                      child:
-                                          Column(
+                                      child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            item['name'] ??
-                                                '',
+                                            (item['name'] ?? '').toString(),
                                             style: const TextStyle(
-                                                fontWeight:
-                                                    FontWeight.bold),
+                                                fontWeight: FontWeight.bold),
                                           ),
-                                          Text(
-                                              'ID: ${item['id']}'),
-                                          Text(
-                                              'สาขา: ${item['branch']}'),
+                                          Text('ID: ${item['id']}'),
+                                          Text('สาขา: ${item['branch']}'),
                                           Text(
                                               'วันหมดอายุ: ${item['expdate'] ?? '-'}'),
-                                          Text(
-                                              'สถานที่: ${item['location']}'),
-                                          Text(
-                                              'ประเภท: ${item['type']}'),
+                                          Text('สถานที่: ${item['location']}'),
+                                          Text('ประเภท: ${item['type']}'),
                                           Row(
                                             children: [
                                               Icon(
-                                                item['active'] ==
-                                                        1
+                                                item['active'] == 1
                                                     ? Icons.check_circle
                                                     : Icons.cancel,
-                                                size:
-                                                    16,
-                                                color: item['active'] ==
-                                                        1
+                                                size: 16,
+                                                color: item['active'] == 1
                                                     ? Colors.green
                                                     : Colors.red,
                                               ),
-                                              const SizedBox(
-                                                  width:
-                                                      6),
+                                              const SizedBox(width: 6),
                                               Text(
-                                                item['active'] ==
-                                                        1
+                                                item['active'] == 1
                                                     ? 'ใช้งานอยู่'
                                                     : 'ไม่พร้อมใช้งาน',
                                               ),

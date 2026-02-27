@@ -21,12 +21,15 @@ class InspectAlarmPage extends StatefulWidget {
 
 class _InspectAlarmPageState extends State<InspectAlarmPage> {
   bool isLoading = true;
-  List checklist = [];
+
+  // ✅ กำหนด type ชัดเจน
+  List<Map<String, dynamic>> checklist = [];
+
   final Map<int, bool> selectedResult = {};
   final TextEditingController remarkController = TextEditingController();
 
   File? imageFile;
-  final picker = ImagePicker();
+  final ImagePicker picker = ImagePicker();
 
   String get checklistApi =>
       'https://api.jaroonrat.com/safetyaudit/api/checklist/3/${widget.assetId}';
@@ -46,9 +49,12 @@ class _InspectAlarmPageState extends State<InspectAlarmPage> {
 
       if (res.statusCode == 200) {
         setState(() {
-          checklist = jsonDecode(res.body);
+          checklist =
+              List<Map<String, dynamic>>.from(jsonDecode(res.body));
           isLoading = false;
         });
+      } else {
+        _showError('โหลด checklist ไม่สำเร็จ');
       }
     } catch (_) {
       _showError('โหลด checklist ไม่สำเร็จ');
@@ -56,7 +62,9 @@ class _InspectAlarmPageState extends State<InspectAlarmPage> {
   }
 
   Future<void> takePhoto() async {
-    final picked = await picker.pickImage(source: ImageSource.camera);
+    final XFile? picked =
+        await picker.pickImage(source: ImageSource.camera);
+
     if (picked != null) {
       setState(() => imageFile = File(picked.path));
     }
@@ -71,9 +79,12 @@ class _InspectAlarmPageState extends State<InspectAlarmPage> {
     final payload = {
       "assetid": widget.assetId,
       "remark": remarkController.text,
-      "ans": checklist.map((item) {
-        final id = item['id'];
-        return {"id": id, "status": selectedResult[id]! ? 1 : 2};
+      "ans": checklist.map((Map<String, dynamic> item) {
+        final int id = item['id'] as int;
+        return {
+          "id": id,
+          "status": selectedResult[id]! ? 1 : 2
+        };
       }).toList(),
     };
 
@@ -86,11 +97,15 @@ class _InspectAlarmPageState extends State<InspectAlarmPage> {
       body: jsonEncode(payload),
     );
 
-    if (res.statusCode == 200 && mounted) Navigator.pop(context);
+    if (res.statusCode == 200 && mounted) {
+      Navigator.pop(context);
+    }
   }
 
-  void _showError(String msg) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   void _confirmCancel() {
     showDialog(
@@ -126,61 +141,92 @@ class _InspectAlarmPageState extends State<InspectAlarmPage> {
   Widget _buildUI() {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(backgroundColor: Colors.orange, title: Text(widget.assetName , style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+      appBar: AppBar(
+        backgroundColor: Colors.orange,
+        title: Text(
+          widget.assetName,
+          style: const TextStyle(
+              fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    ...checklist.map((item) {
-                      final id = item['id'];
-                      return _checkCard(item, id);
-                    }),
-                    const SizedBox(height: 10),
-                    _remarkField(),
-                    const SizedBox(height: 12),
-                    _cameraButton(),
-                    if (imageFile != null) Image.file(imageFile!, height: 180)
-                  ],
+          : Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      ...checklist.map((Map<String, dynamic> item) {
+                        final int id = item['id'] as int;
+                        return _checkCard(item, id);
+                      }),
+                      const SizedBox(height: 10),
+                      _remarkField(),
+                      const SizedBox(height: 12),
+                      _cameraButton(),
+                      if (imageFile != null)
+                        Image.file(imageFile!, height: 180),
+                    ],
+                  ),
                 ),
-              ),
-              _bottomButtons()
-            ]),
+                _bottomButtons(),
+              ],
+            ),
     );
   }
 
-  Widget _checkCard(item, id) {
+  // ✅ ใส่ type ให้พารามิเตอร์
+  Widget _checkCard(Map<String, dynamic> item, int id) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6)
+        ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        InkWell(
-          onTap: () => setState(() => selectedResult[id] = true),
-          child: Row(children: [
-            Icon(selectedResult[id] == true ? Icons.check_circle : Icons.radio_button_unchecked, color: Colors.green),
-            const SizedBox(width: 8),
-            Text(item['detail_Y']),
-          ]),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () => setState(() => selectedResult[id] = false),
-          child: Row(children: [
-            Icon(selectedResult[id] == false ? Icons.cancel : Icons.radio_button_unchecked, color: Colors.red),
-            const SizedBox(width: 8),
-            Text(item['detail_N']),
-          ]),
-        ),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(item['name'] ?? '',
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: () => setState(() => selectedResult[id] = true),
+            child: Row(
+              children: [
+                Icon(
+                  selectedResult[id] == true
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 8),
+                Text(item['detail_Y'] ?? ''),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => setState(() => selectedResult[id] = false),
+            child: Row(
+              children: [
+                Icon(
+                  selectedResult[id] == false
+                      ? Icons.cancel
+                      : Icons.radio_button_unchecked,
+                  color: Colors.red,
+                ),
+                const SizedBox(width: 8),
+                Text(item['detail_N'] ?? ''),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -192,7 +238,9 @@ class _InspectAlarmPageState extends State<InspectAlarmPage> {
         hintText: 'หมายเหตุ',
         filled: true,
         fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }

@@ -21,12 +21,15 @@ class InspectfhcPage extends StatefulWidget {
 
 class _InspectfhcPageState extends State<InspectfhcPage> {
   bool isLoading = true;
-  List checklist = [];
+
+  // ✅ ใส่ type ชัดเจน
+  List<Map<String, dynamic>> checklist = [];
+
   final Map<int, bool> selectedResult = {};
   final TextEditingController remarkController = TextEditingController();
 
   File? imageFile;
-  final picker = ImagePicker();
+  final ImagePicker picker = ImagePicker();
 
   String get checklistApi =>
       'https://api.jaroonrat.com/safetyaudit/api/checklist/2/${widget.assetId}';
@@ -46,7 +49,9 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
 
       if (res.statusCode == 200) {
         setState(() {
-          checklist = jsonDecode(res.body);
+          // ✅ cast type
+          checklist =
+              List<Map<String, dynamic>>.from(jsonDecode(res.body));
           isLoading = false;
         });
       }
@@ -71,8 +76,8 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
     final payload = {
       "assetid": widget.assetId,
       "remark": remarkController.text,
-      "ans": checklist.map((item) {
-        final id = item['id'];
+      "ans": checklist.map((Map<String, dynamic> item) {
+        final int id = item['id'] as int;
         return {"id": id, "status": selectedResult[id]! ? 1 : 2};
       }).toList(),
     };
@@ -108,10 +113,7 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
               Navigator.pop(context);
               Navigator.pop(context);
             },
-            child: const Text(
-              'ยกเลิก',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('ยกเลิก', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -126,7 +128,12 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
   Widget _buildUI() {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(backgroundColor: Colors.deepOrangeAccent, title: Text(widget.assetName , style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+      appBar: AppBar(
+        backgroundColor: Colors.deepOrangeAccent,
+        title: Text(widget.assetName,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white)),
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(children: [
@@ -134,8 +141,8 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    ...checklist.map((item) {
-                      final id = item['id'];
+                    ...checklist.map((Map<String, dynamic> item) {
+                      final int id = item['id'] as int;
                       return _checkCard(item, id);
                     }),
                     const SizedBox(height: 10),
@@ -151,7 +158,8 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
     );
   }
 
-  Widget _checkCard(item, id) {
+  // ✅ ใส่ type parameter
+  Widget _checkCard(Map<String, dynamic> item, int id) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -161,12 +169,17 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(item['name'],
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         InkWell(
           onTap: () => setState(() => selectedResult[id] = true),
           child: Row(children: [
-            Icon(selectedResult[id] == true ? Icons.check_circle : Icons.radio_button_unchecked, color: Colors.green),
+            Icon(
+                selectedResult[id] == true
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: Colors.green),
             const SizedBox(width: 8),
             Text(item['detail_Y']),
           ]),
@@ -175,7 +188,11 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
         InkWell(
           onTap: () => setState(() => selectedResult[id] = false),
           child: Row(children: [
-            Icon(selectedResult[id] == false ? Icons.cancel : Icons.radio_button_unchecked, color: Colors.red),
+            Icon(
+                selectedResult[id] == false
+                    ? Icons.cancel
+                    : Icons.radio_button_unchecked,
+                color: Colors.red),
             const SizedBox(width: 8),
             Text(item['detail_N']),
           ]),
@@ -208,31 +225,29 @@ class _InspectfhcPageState extends State<InspectfhcPage> {
   Widget _bottomButtons() {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: _confirmCancel,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
-                minimumSize: const Size.fromHeight(50),
-              ),
-              child: const Text('ยกเลิก'),
+      child: Row(children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _confirmCancel,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey,
+              minimumSize: const Size.fromHeight(50),
             ),
+            child: const Text('ยกเลิก'),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: submitAudit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                minimumSize: const Size.fromHeight(50),
-              ),
-              child: const Text('บันทึก'),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: submitAudit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              minimumSize: const Size.fromHeight(50),
             ),
+            child: const Text('บันทึก'),
           ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 }

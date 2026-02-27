@@ -1,5 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:http/http.dart' as http;
+import '/services/auth_service.dart';
+
 import '/---Inspect---/inspectfire.dart';
 import '/---Inspect---/inspectball.dart';
 import '/---Inspect---/inspectfhc.dart';
@@ -19,54 +23,52 @@ class _QrScanPageState extends State<QrScanPage> {
   final MobileScannerController controller = MobileScannerController();
   bool isScanned = false;
 
-  void handleQr(String code) {
-    if (isScanned) return;
-    isScanned = true;
-
+  // ยิง API เพื่อรู้ type จาก assetId
+  Future<void> openFromAssetId(int assetId) async {
     try {
-      final parts = code.split('|');
+      final res = await http.get(
+        Uri.parse('https://api.jaroonrat.com/safetyaudit/api/asset/$assetId'),
+        headers: {
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
 
-      if (parts.length < 2) {
-        _showError("QR ไม่ถูกต้อง");
+      if (!mounted) return; // ⭐ กัน context พังหลัง await
+
+      if (res.statusCode != 200) {
+        _showError("ไม่พบอุปกรณ์");
         isScanned = false;
         return;
       }
 
-      final int type = int.parse(parts[0]);
-      final int assetId = int.parse(parts[1]);
-      final String assetName =
-          parts.length > 2 ? parts[2] : "Device";
+      final data = jsonDecode(res.body);
+
+      final int type = data['type'];
+      final String assetName = data['name'] ?? "Device";
 
       Widget page;
 
       switch (type) {
         case 0:
-          page = InspectFirePage(
-              assetId: assetId, assetName: assetName);
+          page = InspectFirePage(assetId: assetId, assetName: assetName);
           break;
         case 1:
-          page = InspectBallPage(
-              assetId: assetId, assetName: assetName);
+          page = InspectBallPage(assetId: assetId, assetName: assetName);
           break;
         case 2:
-          page = InspectfhcPage(
-              assetId: assetId, assetName: assetName);
+          page = InspectfhcPage(assetId: assetId, assetName: assetName);
           break;
         case 3:
-          page = InspectAlarmPage(
-              assetId: assetId, assetName: assetName);
+          page = InspectAlarmPage(assetId: assetId, assetName: assetName);
           break;
         case 4:
-          page = InspectSandPage(
-              assetId: assetId, assetName: assetName);
+          page = InspectSandPage(assetId: assetId, assetName: assetName);
           break;
         case 6:
-          page = InspectEyewashPage(
-              assetId: assetId, assetName: assetName);
+          page = InspectEyewashPage(assetId: assetId, assetName: assetName);
           break;
         case 7:
-          page = InspectLightPage(
-              assetId: assetId, assetName: assetName);
+          page = InspectLightPage(assetId: assetId, assetName: assetName);
           break;
         default:
           _showError("ไม่พบประเภทอุปกรณ์");
@@ -74,22 +76,44 @@ class _QrScanPageState extends State<QrScanPage> {
           return;
       }
 
-      Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => page),
-      ).then((_) {
-        isScanned = false;
-      });
+      );
+
+      if (!mounted) return;
+      isScanned = false; // กลับมาหน้านี้แล้วสแกนใหม่ได้
 
     } catch (e) {
+      if (!mounted) return;
+      _showError("ไม่สามารถโหลดข้อมูลอุปกรณ์");
+      isScanned = false;
+    }
+  }
+
+  void handleQr(String code) {
+    if (isScanned) return;
+    isScanned = true;
+
+    try {
+      final int assetId = int.parse(code);
+      openFromAssetId(assetId);
+    } catch (_) {
       _showError("QR ไม่ถูกต้อง");
       isScanned = false;
     }
   }
 
   void _showError(String msg) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -97,7 +121,7 @@ class _QrScanPageState extends State<QrScanPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("สแกน QR"),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.cyan,
       ),
       body: MobileScanner(
         controller: controller,

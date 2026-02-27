@@ -21,15 +21,20 @@ class InspectBallPage extends StatefulWidget {
 
 class _InspectBallPageState extends State<InspectBallPage> {
   bool isLoading = true;
-  bool isSubmitting = false; // สำหรับแสดงสถานะตอนกดบันทึก
-  List checklist = [];
+  bool isSubmitting = false;
+
+  // ✅ ใส่ type
+  List<Map<String, dynamic>> checklist = [];
+
   final Map<int, bool> selectedResult = {};
   final TextEditingController remarkController = TextEditingController();
 
   File? imageFile;
-  final picker = ImagePicker();
+  final ImagePicker picker = ImagePicker();
+  
+  // ✅ ตัวแปรเก็บวันหมดอายุ
+  DateTime? expireDate;
 
-  // API ดึงข้อมูล Checklist ของ InspectBall (เลข 1)
   String get checklistApi =>
       'https://api.jaroonrat.com/safetyaudit/api/checklist/1/${widget.assetId}';
 
@@ -48,7 +53,7 @@ class _InspectBallPageState extends State<InspectBallPage> {
 
       if (res.statusCode == 200) {
         setState(() {
-          checklist = jsonDecode(res.body);
+          checklist = List<Map<String, dynamic>>.from(jsonDecode(res.body));
           isLoading = false;
         });
       } else {
@@ -61,8 +66,33 @@ class _InspectBallPageState extends State<InspectBallPage> {
     }
   }
 
+  // ✅ ฟังก์ชันเลือกวันหมดอายุ
+  Future<void> _selectExpireDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color.fromARGB(255, 5, 47, 233), // สีของ Ball
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != expireDate) {
+      setState(() {
+        expireDate = picked;
+      });
+    }
+  }
+
   Future<void> takePhoto() async {
-    final picked = await picker.pickImage(source: ImageSource.camera);
+    final XFile? picked = await picker.pickImage(source: ImageSource.camera);
     if (picked != null) {
       setState(() => imageFile = File(picked.path));
     }
@@ -79,7 +109,7 @@ class _InspectBallPageState extends State<InspectBallPage> {
       request.fields['assetid'] = widget.assetId.toString();
 
       request.files.add(await http.MultipartFile.fromPath(
-        'file', 
+        'file',
         imageFile!.path,
       ));
 
@@ -87,20 +117,18 @@ class _InspectBallPageState extends State<InspectBallPage> {
 
       if (response.statusCode == 200) {
         final respStr = await response.stream.bytesToString();
-        debugPrint('=== Upload Response ===');
-        debugPrint(respStr);
-        
+        debugPrint('Upload Response: $respStr');
+
         try {
           final json = jsonDecode(respStr);
-          return json['url'] ?? respStr; 
-        } catch (e) {
+          return json['url'] ?? respStr;
+        } catch (_) {
           return respStr;
         }
       } else {
         final errStr = await response.stream.bytesToString();
-        debugPrint('Upload failed with status: ${response.statusCode}');
-        debugPrint('=== Error Body (สาเหตุที่แท้จริง) ===');
-        debugPrint(errStr); 
+        debugPrint('Upload failed ${response.statusCode}');
+        debugPrint(errStr);
         return null;
       }
     } catch (e) {
@@ -115,39 +143,46 @@ class _InspectBallPageState extends State<InspectBallPage> {
       return;
     }
 
-    setState(() => isSubmitting = true); // แสดง Loading ป้องกันกดซ้ำ
+    // ✅ เช็คว่าเลือกวันหมดอายุหรือยัง
+    if (expireDate == null) {
+      _showError('กรุณาเลือกวันหมดอายุ');
+      return;
+    }
+
+    setState(() => isSubmitting = true);
 
     try {
-      String imageUrl = ""; // ค่าเริ่มต้นของ url หากไม่มีการถ่ายรูป
+      String imageUrl = "";
 
-      // 1. อัปโหลดรูปภาพก่อน (ถ้ามีการถ่ายรูปไว้)
       if (imageFile != null) {
         final uploadedPath = await _uploadImage();
-        
+
         if (uploadedPath == null) {
           _showError('อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่');
           setState(() => isSubmitting = false);
-          return; // หยุดการทำงานถ้าอัปโหลดรูปไม่ผ่าน
+          return;
         }
-        
-        imageUrl = uploadedPath; 
+
+        imageUrl = uploadedPath;
       }
 
-      // 2. เตรียมข้อมูล Payload ให้ตรงกับรูปแบบที่ Backend ต้องการ
+      // Format วันที่ให้อยู่ในรูปแบบ YYYY-MM-DD สำหรับส่ง API
+      String formattedDate =
+          "${expireDate!.year}-${expireDate!.month.toString().padLeft(2, '0')}-${expireDate!.day.toString().padLeft(2, '0')}";
+
       final payload = {
         "assetid": widget.assetId,
         "remark": remarkController.text,
-        "url": imageUrl, 
-        "ans": checklist.map((item) {
-          final id = item['id'];
+        "url": imageUrl,
+        "expire_date": formattedDate, // ✅ เพิ่มวันหมดอายุใน payload (อาจต้องเปลี่ยนชื่อ key ตาม API จริงของคุณ)
+        "ans": checklist.map((Map<String, dynamic> item) {
+          final int id = item['id'] as int;
           return {"id": id, "status": selectedResult[id]! ? 1 : 2};
         }).toList(),
       };
 
-      debugPrint('=== Payload for submitAudit ===');
-      debugPrint(jsonEncode(payload));
+      debugPrint('Payload: ${jsonEncode(payload)}');
 
-      // 3. ส่งข้อมูลทั้งหมดไปบันทึก
       final res = await http.post(
         Uri.parse('https://api.jaroonrat.com/safetyaudit/api/submitaudit'),
         headers: {
@@ -157,26 +192,25 @@ class _InspectBallPageState extends State<InspectBallPage> {
         body: jsonEncode(payload),
       );
 
-      debugPrint('=== submitAudit Status ===');
-      debugPrint(res.statusCode.toString());
+      debugPrint('submitAudit Status: ${res.statusCode}');
 
       if (res.statusCode == 200) {
         if (mounted) Navigator.pop(context);
       } else {
         _showError('บันทึกข้อมูลไม่สำเร็จ (Status: ${res.statusCode})');
-        print('=== Error Response from submitAudit ===');
-        print(res.body);
+        debugPrint(res.body);
       }
     } catch (e) {
       _showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-      print(e);
+      debugPrint('$e');
     } finally {
-      if (mounted) setState(() => isSubmitting = false); // ปิด Loading
+      if (mounted) setState(() => isSubmitting = false);
     }
   }
 
-  void _showError(String msg) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   void _confirmCancel() {
     showDialog(
@@ -209,40 +243,47 @@ class _InspectBallPageState extends State<InspectBallPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 5, 47, 233), 
-        title: Text(widget.assetName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))
+        // ✅ คงสีน้ำเงินของ Ball ไว้
+        backgroundColor: const Color.fromARGB(255, 5, 47, 233),
+        title: Text(
+          widget.assetName,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
       ),
       body: Stack(
         children: [
           isLoading
               ? const Center(child: CircularProgressIndicator())
-              : Column(children: [
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        ...checklist.map((item) {
-                          final id = item['id'];
-                          return _checkCard(item, id);
-                        }),
-                        const SizedBox(height: 10),
-                        _remarkField(),
-                        const SizedBox(height: 12),
-                        _cameraButton(),
-                        if (imageFile != null) ...[
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          ...checklist.map((Map<String, dynamic> item) {
+                            final int id = item['id'] as int;
+                            return _checkCard(item, id);
+                          }),
+                          const SizedBox(height: 10),
+                          // ✅ แทรก Widget วันหมดอายุตรงนี้
+                          _expireDateField(),
                           const SizedBox(height: 12),
-                          Image.file(imageFile!, height: 180)
-                        ]
-                      ],
+                          _remarkField(),
+                          const SizedBox(height: 12),
+                          _cameraButton(),
+                          if (imageFile != null) ...[
+                            const SizedBox(height: 12),
+                            Image.file(imageFile!, height: 180)
+                          ]
+                        ],
+                      ),
                     ),
-                  ),
-                  _bottomButtons()
-                ]),
-          
-          // Overlay แสดงระหว่างกดบันทึก
+                    _bottomButtons()
+                  ],
+                ),
           if (isSubmitting)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: .3),
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],
@@ -250,7 +291,37 @@ class _InspectBallPageState extends State<InspectBallPage> {
     );
   }
 
-  Widget _checkCard(item, id) {
+  // ✅ เพิ่ม Widget สำหรับเลือกวันหมดอายุ
+  Widget _expireDateField() {
+    return InkWell(
+      onTap: () => _selectExpireDate(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade400),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              expireDate == null
+                  ? 'เลือกวันหมดอายุ'
+                  : 'วันหมดอายุ: ${expireDate!.day}/${expireDate!.month}/${expireDate!.year}',
+              style: TextStyle(
+                color: expireDate == null ? Colors.grey.shade600 : Colors.black,
+                fontSize: 16,
+              ),
+            ),
+            const Icon(Icons.calendar_today, color: Color.fromARGB(255, 5, 47, 233)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _checkCard(Map<String, dynamic> item, int id) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -259,31 +330,41 @@ class _InspectBallPageState extends State<InspectBallPage> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        InkWell(
-          onTap: () => setState(() => selectedResult[id] = true),
-          child: Row(children: [
-            Icon(selectedResult[id] == true
-                ? Icons.check_circle
-                : Icons.radio_button_unchecked, color: Colors.green),
-            const SizedBox(width: 8),
-            Expanded(child: Text(item['detail_Y'])), // ป้องกัน text ล้นจอ
-          ]),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () => setState(() => selectedResult[id] = false),
-          child: Row(children: [
-            Icon(selectedResult[id] == false
-                ? Icons.cancel
-                : Icons.radio_button_unchecked, color: Colors.red),
-            const SizedBox(width: 8),
-            Expanded(child: Text(item['detail_N'])), // ป้องกัน text ล้นจอ
-          ]),
-        ),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(item['name'] ?? '',
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: () => setState(() => selectedResult[id] = true),
+            child: Row(children: [
+              Icon(
+                selectedResult[id] == true
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: Colors.green,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(item['detail_Y'] ?? '')),
+            ]),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => setState(() => selectedResult[id] = false),
+            child: Row(children: [
+              Icon(
+                selectedResult[id] == false
+                    ? Icons.cancel
+                    : Icons.radio_button_unchecked,
+                color: Colors.red,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(item['detail_N'] ?? '')),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 
@@ -295,7 +376,9 @@ class _InspectBallPageState extends State<InspectBallPage> {
         hintText: 'หมายเหตุ',
         filled: true,
         fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -326,7 +409,7 @@ class _InspectBallPageState extends State<InspectBallPage> {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: isSubmitting ? null : submitAudit, // ปิดปุ่มถ้ากำลังโหลด
+              onPressed: isSubmitting ? null : submitAudit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 minimumSize: const Size.fromHeight(50),
