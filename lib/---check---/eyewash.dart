@@ -140,7 +140,7 @@ class _EyewashPageState extends State<EyewashPage> {
           const SizedBox(width: 8),
           _buildFilterButton('ใช้งานอยู่', 1),
           const SizedBox(width: 8),
-          _buildFilterButton('ไม่พร้อม', 2),
+          _buildFilterButton('ไม่พร้อมใช้งาน', 2),
         ],
       ),
     );

@@ -23,7 +23,6 @@ class _InspectBallPageState extends State<InspectBallPage> {
   bool isLoading = true;
   bool isSubmitting = false;
 
-  // ✅ ใส่ type
   List<Map<String, dynamic>> checklist = [];
 
   final Map<int, bool> selectedResult = {};
@@ -31,9 +30,6 @@ class _InspectBallPageState extends State<InspectBallPage> {
 
   File? imageFile;
   final ImagePicker picker = ImagePicker();
-  
-  // ✅ ตัวแปรเก็บวันหมดอายุ
-  DateTime? expireDate;
 
   String get checklistApi =>
       'https://api.jaroonrat.com/safetyaudit/api/checklist/1/${widget.assetId}';
@@ -63,31 +59,6 @@ class _InspectBallPageState extends State<InspectBallPage> {
     } catch (_) {
       _showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
       setState(() => isLoading = false);
-    }
-  }
-
-  // ✅ ฟังก์ชันเลือกวันหมดอายุ
-  Future<void> _selectExpireDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color.fromARGB(255, 5, 47, 233), // สีของ Ball
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != expireDate) {
-      setState(() {
-        expireDate = picked;
-      });
     }
   }
 
@@ -143,12 +114,6 @@ class _InspectBallPageState extends State<InspectBallPage> {
       return;
     }
 
-    // ✅ เช็คว่าเลือกวันหมดอายุหรือยัง
-    if (expireDate == null) {
-      _showError('กรุณาเลือกวันหมดอายุ');
-      return;
-    }
-
     setState(() => isSubmitting = true);
 
     try {
@@ -166,15 +131,10 @@ class _InspectBallPageState extends State<InspectBallPage> {
         imageUrl = uploadedPath;
       }
 
-      // Format วันที่ให้อยู่ในรูปแบบ YYYY-MM-DD สำหรับส่ง API
-      String formattedDate =
-          "${expireDate!.year}-${expireDate!.month.toString().padLeft(2, '0')}-${expireDate!.day.toString().padLeft(2, '0')}";
-
       final payload = {
         "assetid": widget.assetId,
         "remark": remarkController.text,
         "url": imageUrl,
-        "expire_date": formattedDate, // ✅ เพิ่มวันหมดอายุใน payload (อาจต้องเปลี่ยนชื่อ key ตาม API จริงของคุณ)
         "ans": checklist.map((Map<String, dynamic> item) {
           final int id = item['id'] as int;
           return {"id": id, "status": selectedResult[id]! ? 1 : 2};
@@ -243,7 +203,6 @@ class _InspectBallPageState extends State<InspectBallPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        // ✅ คงสีน้ำเงินของ Ball ไว้
         backgroundColor: const Color.fromARGB(255, 5, 47, 233),
         title: Text(
           widget.assetName,
@@ -265,9 +224,6 @@ class _InspectBallPageState extends State<InspectBallPage> {
                             return _checkCard(item, id);
                           }),
                           const SizedBox(height: 10),
-                          // ✅ แทรก Widget วันหมดอายุตรงนี้
-                          _expireDateField(),
-                          const SizedBox(height: 12),
                           _remarkField(),
                           const SizedBox(height: 12),
                           _cameraButton(),
@@ -287,36 +243,6 @@ class _InspectBallPageState extends State<InspectBallPage> {
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],
-      ),
-    );
-  }
-
-  // ✅ เพิ่ม Widget สำหรับเลือกวันหมดอายุ
-  Widget _expireDateField() {
-    return InkWell(
-      onTap: () => _selectExpireDate(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade400),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              expireDate == null
-                  ? 'เลือกวันหมดอายุ'
-                  : 'วันหมดอายุ: ${expireDate!.day}/${expireDate!.month}/${expireDate!.year}',
-              style: TextStyle(
-                color: expireDate == null ? Colors.grey.shade600 : Colors.black,
-                fontSize: 16,
-              ),
-            ),
-            const Icon(Icons.calendar_today, color: Color.fromARGB(255, 5, 47, 233)),
-          ],
-        ),
       ),
     );
   }
@@ -403,7 +329,7 @@ class _InspectBallPageState extends State<InspectBallPage> {
                 backgroundColor: Colors.grey,
                 minimumSize: const Size.fromHeight(50),
               ),
-              child: const Text('ยกเลิก'),
+              child: const Text('ยกเลิก',style: TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(width: 12),
@@ -414,7 +340,7 @@ class _InspectBallPageState extends State<InspectBallPage> {
                 backgroundColor: Colors.red,
                 minimumSize: const Size.fromHeight(50),
               ),
-              child: const Text('บันทึก'),
+              child: const Text('บันทึก',style: TextStyle(color: Colors.white),),
             ),
           ),
         ],

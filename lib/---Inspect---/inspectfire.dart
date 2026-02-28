@@ -375,7 +375,7 @@ class _InspectFirePageState extends State<InspectFirePage> {
                         .fromHeight(50),
               ),
               child:
-                  const Text('ยกเลิก'),
+                  const Text('ยกเลิก', style: TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(width: 12),
@@ -394,7 +394,7 @@ class _InspectFirePageState extends State<InspectFirePage> {
                         .fromHeight(50),
               ),
               child:
-                  const Text('บันทึก'),
+                  const Text('บันทึก', style: TextStyle(color: Colors.white)),
             ),
           ),
         ],

@@ -136,7 +136,7 @@ class _LightPageState extends State<LightPage> {
                   (v) => setState(() => selectedStatus = v)),
               _buildChip("ใช้งานอยู่", selectedStatus,
                   (v) => setState(() => selectedStatus = v)),
-              _buildChip("ไม่พร้อม", selectedStatus,
+              _buildChip("ไม่พร้อมใช้งาน", selectedStatus,
                   (v) => setState(() => selectedStatus = v)),
             ],
           ),
