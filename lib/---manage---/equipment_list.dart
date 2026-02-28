@@ -33,11 +33,41 @@ class _AssetListPageState extends State<AssetListPage> {
   bool showFilter = false;
 
   InputDecoration _dropdownDecoration() {
-    return InputDecoration(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    );
-  }
+  return InputDecoration(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+
+    // ✅ สีพื้นหลัง
+    filled: true,
+    fillColor: Colors.grey.shade100,
+
+    // ✅ กรอบปกติ
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(
+        color: Colors.grey,
+        width: 1,
+      ),
+    ),
+
+    // ✅ กรอบตอนโฟกัส
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(
+        color: Colors.blueAccent,
+        width: 2,
+      ),
+    ),
+
+    // ✅ กรอบตอน error
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(
+        color: Colors.red,
+        width: 1.5,
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +179,7 @@ class _AssetListPageState extends State<AssetListPage> {
               /// =========================
               /// SUMMARY
               /// =========================
-              _summaryCard(filtered.length),
+              _summaryCard(assets.length, filtered.length),
 
               /// =========================
               /// SEARCH / FILTER
@@ -179,7 +209,7 @@ class _AssetListPageState extends State<AssetListPage> {
   /// =========================
   /// SUMMARY CARD
   /// =========================
-  Widget _summaryCard(int total) {
+  Widget _summaryCard(int total, int filtered) {
     final icon = _getIconByCategory(widget.categoryId);
     final color = _getColorByCategory(widget.categoryId);
 
@@ -193,9 +223,6 @@ class _AssetListPageState extends State<AssetListPage> {
         ),
         child: Row(
           children: [
-            /// 🔹 ICON ตามประเภทอุปกรณ์
-
-            /// 🔹 TEXT SUMMARY
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,14 +237,14 @@ class _AssetListPageState extends State<AssetListPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'จำนวนทั้งหมด $total',
-                    style: TextStyle(fontSize: 14, color: Colors.black),
+                    filtered == total
+                        ? 'จำนวนทั้งหมด $total รายการ'
+                        : 'แสดง $filtered จาก $total รายการ',
+                    style: const TextStyle(fontSize: 14, color: Colors.black),
                   ),
                 ],
               ),
             ),
-
-            /// 🔹 CATEGORY TAG (pill with icon + label)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
