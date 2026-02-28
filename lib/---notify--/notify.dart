@@ -65,7 +65,28 @@ class _NotificationPageState extends State<NotificationPage> {
   InputDecoration _dropdownDecoration() {
     return InputDecoration(
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+
+      // ✅ สีพื้นหลัง
+      filled: true,
+      fillColor: Colors.grey.shade100,
+
+      // ✅ กรอบปกติ
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.grey, width: 1),
+      ),
+
+      // ✅ กรอบตอนโฟกัส
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+      ),
+
+      // ✅ กรอบตอน error
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
     );
   }
 
@@ -197,7 +218,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     ),
                   ),
                 ),
-                _summaryCard(filtered.length),
+                _summaryCard(assets.length, filtered.length),
                 const SizedBox(height: 10),
 
                 /// 🔹 Summary
@@ -259,15 +280,17 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   /// =========================
-  /// SUMMARY CARD (แบบในรูป)
+  /// SUMMARY CARD (UI แบบในรูป + Logic total/filtered)
   /// =========================
-  Widget _summaryCard(int count) {
+  Widget _summaryCard(int total, int filtered) {
+ 
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white, // พื้นเทาอ่อน
+          color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.black),
         ),
@@ -278,20 +301,25 @@ class _NotificationPageState extends State<NotificationPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "รายการถังดับเพลิง",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "จำนวนทั้งหมด $count",
+                    filtered == total
+                        ? "จำนวนทั้งหมด $total รายการ"
+                        : "แสดง $filtered จาก $total รายการ",
                     style: const TextStyle(fontSize: 14, color: Colors.black87),
                   ),
                 ],
               ),
             ),
 
-            /// 🔹 ปุ่มด้านขวา (แดง)
+            /// 🔹 ปุ่มด้านขวา (ตาม category)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(
@@ -300,9 +328,9 @@ class _NotificationPageState extends State<NotificationPage> {
                 color: Colors.white,
               ),
               child: Row(
-                children: const [
+                children: [
                   Icon(Icons.fire_extinguisher, color: Colors.red, size: 22),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     "ถังดับเพลิง",
                     style: TextStyle(
@@ -470,7 +498,7 @@ class _NotificationPageState extends State<NotificationPage> {
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.grey.shade100,
                         border: Border.all(color: Colors.grey.shade400),
                         borderRadius: BorderRadius.circular(12),
                       ),
