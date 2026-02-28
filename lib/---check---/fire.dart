@@ -161,7 +161,7 @@ class _FirePageState extends State<FirePage> {
                       if (widget.categoryId == 0 || widget.categoryId == 1)
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: selectedType,
+                            initialValue: selectedType,
                             hint: const Text("เลือกประเภท"),
                             items: types
                                 .map((type) => DropdownMenuItem(
@@ -176,7 +176,7 @@ class _FirePageState extends State<FirePage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: selectedActive,
+                          initialValue: selectedActive,
                           hint: const Text("เลือกสถานะ"),
                           items: const [
                             DropdownMenuItem(value: -1, child: Text("เลือกสถานะ")),
@@ -389,6 +389,7 @@ class _FirePageState extends State<FirePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -437,13 +438,15 @@ class _FirePageState extends State<FirePage> {
                     const Icon(Icons.calendar_today, size: 18, color: Colors.orange),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
-                        (item['expdate'] != null && item['expdate'].toString().isNotEmpty)
-                            ? "วันหมดอายุ ${item['expdate'].toString().split(' ')[0]}"
-                            : "วันหมดอายุ -",
-                        style: const TextStyle(fontSize: 14),
+                        child: Text(
+                          // เช็คว่า item['expdate'] เป็น null หรือว่างไหม
+                          (item['expdate'] != null &&
+                                  item['expdate'].toString().isNotEmpty)
+                              ? "วันหมดอายุ ${item['expdate'].toString().split(' ')[0]}"
+                              : "วันหมดอายุ -", // ถ้าเป็น null ให้แสดง -
+                          style: const TextStyle(fontSize: 15),
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -500,25 +503,43 @@ class _FirePageState extends State<FirePage> {
       final location = (item['location'] ?? '').toString().toLowerCase();
       final type = (item['type'] ?? '').toString().toLowerCase();
       final active = item['active'] as int?;
-      final expdate = (item['expdate'] ?? '').toString();
+      final expdateStr =  item['expdate']?.toString();
 
       final matchKeyword = keyword.isEmpty || name.contains(keyword.toLowerCase()) || branch.contains(keyword.toLowerCase()) || location.contains(keyword.toLowerCase());
       final matchType = selectedType == null || selectedType == "ทั้งหมด" || type == selectedType?.toLowerCase();
       final matchActive = selectedActive == -1 || active == selectedActive;
+      
 
       bool matchDate = true;
-      if (selectedDate != null && expdate.isNotEmpty) {
-        final itemDate = DateTime.tryParse(expdate);
-        if (itemDate != null) {
-          matchDate = itemDate.year == selectedDate!.year && itemDate.month == selectedDate!.month && itemDate.day == selectedDate!.day;
-        } else {
-          matchDate = false;
-        }
-      }
+      if (selectedDate != null) {
+              // ❌ ถ้า expdate เป็น null ไม่ต้องแสดง
+              if (expdateStr == null || expdateStr.isEmpty) {
+                matchDate = false;
+              } else {
+                try {
+                  final parts = expdateStr.split(' ')[0].split('/');
 
-      return matchKeyword && matchType && matchActive && matchDate;
-    }).toList();
+                  final buddhistYear = int.parse(parts[2]);
+                  final christianYear = buddhistYear - 543; // แปลง พ.ศ. -> ค.ศ.
 
+                  final date = DateTime(
+                    christianYear,
+                    int.parse(parts[1]),
+                    int.parse(parts[0]),
+                  );
+
+                  matchDate =
+                      date.year == selectedDate!.year &&
+                      date.month == selectedDate!.month &&
+                      date.day == selectedDate!.day;
+                } catch (_) {
+                  matchDate = false;
+                }
+              }
+            }
+
+            return matchKeyword && matchType && matchActive && matchDate;
+          }).toList();
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
       appBar: AppBar(
