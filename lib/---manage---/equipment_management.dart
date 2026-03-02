@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import '/services/api_services.dart';
-
+import '/---check---/qr_scan_page.dart';
 // อยู่โฟลเดอร์เดียวกัน
 import 'equipment_list.dart';
 
@@ -37,6 +36,7 @@ class EquipmentManagementPage extends StatelessWidget {
       /// =========================
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+        
         child: FutureBuilder<List<dynamic>>(
           future: ApiService.getCategory(),
           builder: (context, snapshot) {
@@ -59,6 +59,36 @@ class EquipmentManagementPage extends StatelessWidget {
 
             return Column(
               children: [
+                    const SizedBox(height: 10),
+
+            /// 🔥 ปุ่มสแกน QR (อยู่บนสุด)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0047AB),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const QrScanPage(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+                label: const Text(
+                  "สแกน QR เพื่อเข้าถึงอุปกรณ์",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 25),
                 _HeaderCard(total: total),
                 const SizedBox(height: 30),
 
@@ -106,19 +136,19 @@ class EquipmentManagementPage extends StatelessWidget {
   IconData _getIconByCategory(int id) {
     switch (id) {
       case 0:
-        return Icons.fire_extinguisher;
+        return Icons.fire_extinguisher; // ถังดับเพลิง
       case 1:
-        return Icons.sports_baseball;
+        return Icons.sports_baseball; // ลูกบอลดับเพลิง
       case 2:
-        return Icons.local_fire_department;
+        return Icons.fire_hydrant_alt; // ตู้น้ำดับเพลิง
       case 3:
-        return Icons.warning_amber;
+        return Icons.warning_amber; // สัญญาณแจ้งเหตุ
       case 4:
-        return Icons.grain;
+        return Icons.grain; // ทรายซับสารเคมี
       case 6:
-        return CupertinoIcons.drop_fill;
+        return Icons.opacity; // 👈 อ่างล้างตา (ชัดกว่า drop)
       case 7:
-        return Icons.lightbulb;
+        return Icons.lightbulb; // ไฟฉุกเฉิน
       default:
         return Icons.inventory_2;
     }
@@ -132,15 +162,15 @@ class EquipmentManagementPage extends StatelessWidget {
       case 0:
         return Colors.red;
       case 1:
-        return Colors.yellow;
-      case 2:
-        return Colors.deepOrangeAccent;
-      case 3:
         return Colors.orange;
+      case 2:
+        return Colors.deepOrange;
+      case 3:
+        return Colors.amber;
       case 4:
         return Colors.brown;
       case 6:
-        return Colors.blue;
+        return Colors.blue; // อ่างล้างตา
       case 7:
         return Colors.green;
       default:

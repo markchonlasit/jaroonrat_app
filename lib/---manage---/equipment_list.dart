@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
-import 'package:flutter/cupertino.dart';
 import 'equipment_view.dart';
 import 'equipment_edit.dart';
 
@@ -69,25 +68,28 @@ class _AssetListPageState extends State<AssetListPage> {
   );
 }
 
+
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
+      
       backgroundColor: Colors.white,
 
       /// =========================
       /// APP BAR
       /// =========================
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0047AB),
+        backgroundColor: _getColorByCategory(widget.categoryId),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'การจัดการข้อมูลของอุปกรณ์',
-          style: TextStyle(
+        title: Text(
+          '${widget.categoryName}ทั้งหมด',
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+    
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -755,13 +757,13 @@ IconData _getIconByCategory(int id) {
     case 1:
       return Icons.sports_baseball; // ลูกบอลดับเพลิง
     case 2:
-      return Icons.local_fire_department; // ตู้น้ำดับเพลิง
+      return Icons.fire_hydrant_alt; // ตู้น้ำดับเพลิง
     case 3:
       return Icons.warning_amber; // สัญญาณแจ้งเหตุ
     case 4:
       return Icons.grain; // ทรายซับสารเคมี
     case 6:
-      return CupertinoIcons.drop_fill; // 👈 อ่างล้างตา (ชัดกว่า drop)
+      return Icons.opacity; // 👈 อ่างล้างตา (ชัดกว่า drop)
     case 7:
       return Icons.lightbulb; // ไฟฉุกเฉิน
     default:
