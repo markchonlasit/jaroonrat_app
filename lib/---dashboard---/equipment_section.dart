@@ -257,7 +257,7 @@ class _EquipmentSectionState extends State<EquipmentSection> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: Colors.grey.shade300,
+                          color: Colors.grey.shade400,
                           width: 1,
                         ),
                       ),
