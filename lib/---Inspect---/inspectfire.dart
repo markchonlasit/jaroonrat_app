@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '/services/auth_service.dart';
+import 'package:http_parser/http_parser.dart';
 
 class InspectFirePage extends StatefulWidget {
   final int assetId;
@@ -62,51 +63,89 @@ class _InspectFirePageState extends State<InspectFirePage> {
     }
   }
 
-  Future<void> takePhoto() async {
-    final XFile? picked =
-        await picker.pickImage(source: ImageSource.camera);
-    if (picked != null) {
-      setState(() => imageFile = File(picked.path));
-    }
+Future<void> takePhoto() async {
+  final XFile? picked = await picker.pickImage(
+    source: ImageSource.camera,
+    imageQuality: 30, // 🔥 ลดคุณภาพ (0-100)
+  );
+
+  if (picked != null) {
+    setState(() => imageFile = File(picked.path));
   }
+}
 
-  Future<String?> _uploadImage() async {
-    try {
-      final http.MultipartRequest request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://api.jaroonrat.com/safetyaudit/api/uploadpicture'),
-      );
+Future<String?> _uploadImage() async {
+  try {
+    if (imageFile == null) return null;
+  print("In Function _uploadImage");
+    final DateTime now = DateTime.now();
+    final String yyyymm =
+        "${now.year}${now.month.toString().padLeft(2, '0')}";
+  print("File to Upload: ${imageFile!.path}");
+   final fileSize = await imageFile!.length();
+final sizeInMB = fileSize / (1024 * 1024);
+print("📦 File to Upload Size: ${sizeInMB.toStringAsFixed(2)} MB");
+   
+    final uri = Uri.parse(
+        'https://api.jaroonrat.com/safetyaudit/api/uploadpicture');
 
-      request.headers['Authorization'] = 'Bearer ${AuthService.token}';
-      request.fields['assetid'] = widget.assetId.toString();
+    final request = http.MultipartRequest('POST', uri);
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          imageFile!.path,
-        ),
-      );
+    request.headers['Authorization'] =
+        'Bearer ${AuthService.token}';
+    request.headers['Accept'] = '*/*';
 
-      final http.StreamedResponse response = await request.send();
+    request.fields['assetid'] =
+        widget.assetId.toString();
+    request.fields['yyyymm'] = yyyymm;
 
-      if (response.statusCode == 200) {
-        final String respStr =
-            await response.stream.bytesToString();
+    String extension =
+        imageFile!.path.split('.').last.toLowerCase();
 
-        try {
-          final dynamic json = jsonDecode(respStr);
-          return json['url'] ?? respStr;
-        } catch (_) {
-          return respStr;
-        }
-      } else {
-        return null;
-      }
-    } catch (_) {
-      return null;
+    MediaType mediaType;
+
+    if (extension == 'png') {
+      mediaType = MediaType('image', 'png');
+    } else {
+      mediaType = MediaType('image', 'jpeg');
     }
-  }
 
+    final file = await http.MultipartFile.fromPath(
+      'file',
+      imageFile!.path,
+      filename: imageFile!.path.split('/').last,
+      contentType: mediaType,
+    );
+
+    request.files.add(file);
+
+    final streamedResponse = await request.send();
+    final response =
+        await http.Response.fromStream(streamedResponse);
+
+    print("UPLOAD STATUS: ${response.statusCode}");
+    print("UPLOAD RESPONSE: ${response.body}");
+
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> json =
+          jsonDecode(response.body);
+
+      // 🔥 แก้ตรงนี้ให้ cast เป็น String ชัดเจน
+      final String? path =
+          json['message']?.toString();
+
+      print("RETURN PATH : $path");
+
+      return path; // 👈 คืนค่าตรง ๆ เลย
+    }
+
+    return null;
+  } catch (e) {
+    print("UPLOAD ERROR : $e");
+    return null;
+  }
+}
   Future<void> submitAudit() async {
     if (selectedResult.length != checklist.length) {
       _showError('กรุณาตรวจสอบให้ครบทุกข้อ');
@@ -117,9 +156,13 @@ class _InspectFirePageState extends State<InspectFirePage> {
 
     try {
       String imageUrl = "";
-
+      print("IMAGE FILE BEFORE UPLOAD : ${imageFile?.path}");
+      /// ✅ Upload ก่อน
       if (imageFile != null) {
-        final String? uploadedPath = await _uploadImage();
+        final String? uploadedPath =
+            await _uploadImage();
+
+        print("UPLOADED PATH IN SUBMIT: $uploadedPath");
 
         if (uploadedPath == null) {
           _showError('อัปโหลดรูปภาพไม่สำเร็จ');
@@ -134,7 +177,7 @@ class _InspectFirePageState extends State<InspectFirePage> {
         "assetid": widget.assetId,
         "remark": remarkController.text,
         "url": imageUrl,
-        "ans": checklist.map((Map<String, dynamic> item) {
+        "ans": checklist.map((item) {
           final int id = item['id'];
           return {
             "id": id,
@@ -142,23 +185,42 @@ class _InspectFirePageState extends State<InspectFirePage> {
           };
         }).toList(),
       };
+      print("PAYLOAD: ${jsonEncode(payload)}");
 
       final http.Response res = await http.post(
         Uri.parse(
             'https://api.jaroonrat.com/safetyaudit/api/submitaudit'),
         headers: {
-          'Authorization': 'Bearer ${AuthService.token}',
+          'Authorization':
+              'Bearer ${AuthService.token}',
           'Content-Type': 'application/json',
         },
         body: jsonEncode(payload),
       );
 
-      if (res.statusCode == 200) {
-        if (mounted) Navigator.pop(context);
-      } else {
-        _showError(
-            'บันทึกข้อมูลไม่สำเร็จ (Status: ${res.statusCode})');
-      }
+  print("SUBMIT STATUS: ${res.statusCode}");
+  print("SUBMIT RESPONSE BODY: ${res.body}");
+
+if (res.statusCode == 200) {
+  if (!mounted) return;
+
+  Navigator.pop(context);
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => InspectFirePage(
+        assetId: widget.assetId,
+        assetName: widget.assetName,
+      ),
+    ),
+  );
+} else if (res.statusCode == 409) {
+  _showError("มีข้อมูลรายการนี้แล้ว (409)");
+} else {
+  _showError(
+      'บันทึกข้อมูลไม่สำเร็จ (Status: ${res.statusCode})\n${res.body}');
+}
     } catch (e) {
       _showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
@@ -178,7 +240,8 @@ class _InspectFirePageState extends State<InspectFirePage> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('ยืนยันการยกเลิก'),
-        content: const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
+        content:
+            const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -226,17 +289,21 @@ class _InspectFirePageState extends State<InspectFirePage> {
                             const EdgeInsets.all(16),
                         children: [
                           ...checklist.map(
-                              (Map<String, dynamic> item) {
-                            final int id = item['id'];
-                            return _checkCard(item, id);
+                              (item) {
+                            final int id =
+                                item['id'];
+                            return _checkCard(
+                                item, id);
                           }),
                           const SizedBox(height: 10),
                           _remarkField(),
                           const SizedBox(height: 12),
                           _cameraButton(),
                           if (imageFile != null) ...[
-                            const SizedBox(height: 12),
-                            Image.file(imageFile!,
+                            const SizedBox(
+                                height: 12),
+                            Image.file(
+                                imageFile!,
                                 height: 180)
                           ]
                         ],
@@ -248,7 +315,8 @@ class _InspectFirePageState extends State<InspectFirePage> {
           if (isSubmitting)
             Container(
               color:
-                  Colors.black.withValues(alpha: 0.5),
+                  // ignore: deprecated_member_use
+                  Colors.black.withOpacity(0.5),
               child: const Center(
                 child:
                     CircularProgressIndicator(),
@@ -260,7 +328,8 @@ class _InspectFirePageState extends State<InspectFirePage> {
   }
 
   Widget _checkCard(
-      Map<String, dynamic> item, int id) {
+      Map<String, dynamic> item,
+      int id) {
     return Container(
       margin:
           const EdgeInsets.only(bottom: 12),
@@ -288,11 +357,13 @@ class _InspectFirePageState extends State<InspectFirePage> {
           const SizedBox(height: 10),
           InkWell(
             onTap: () => setState(
-                () => selectedResult[id] =
-                    true),
+                () =>
+                    selectedResult[id] =
+                        true),
             child: Row(children: [
               Icon(
-                selectedResult[id] == true
+                selectedResult[id] ==
+                        true
                     ? Icons.check_circle
                     : Icons
                         .radio_button_unchecked,
@@ -300,15 +371,16 @@ class _InspectFirePageState extends State<InspectFirePage> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                  child:
-                      Text(item['detail_Y'])),
+                  child: Text(
+                      item['detail_Y'])),
             ]),
           ),
           const SizedBox(height: 8),
           InkWell(
             onTap: () => setState(
-                () => selectedResult[id] =
-                    false),
+                () =>
+                    selectedResult[id] =
+                        false),
             child: Row(children: [
               Icon(
                 selectedResult[id] ==
@@ -320,8 +392,8 @@ class _InspectFirePageState extends State<InspectFirePage> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                  child:
-                      Text(item['detail_N'])),
+                  child: Text(
+                      item['detail_N'])),
             ]),
           ),
         ],
@@ -375,7 +447,9 @@ class _InspectFirePageState extends State<InspectFirePage> {
                         .fromHeight(50),
               ),
               child:
-                  const Text('ยกเลิก', style: TextStyle(color: Colors.white)),
+                  const Text('ยกเลิก',
+                      style: TextStyle(
+                          color: Colors.white)),
             ),
           ),
           const SizedBox(width: 12),
@@ -394,7 +468,9 @@ class _InspectFirePageState extends State<InspectFirePage> {
                         .fromHeight(50),
               ),
               child:
-                  const Text('บันทึก', style: TextStyle(color: Colors.white)),
+                  const Text('บันทึก',
+                      style: TextStyle(
+                          color: Colors.white)),
             ),
           ),
         ],
