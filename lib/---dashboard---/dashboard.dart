@@ -56,10 +56,10 @@ class DashboardPage extends StatelessWidget {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 16), // 👈 เว้นขอบจอ
         child: Container(
-          padding: const EdgeInsets.all(10), // 👈 ระยะด้านในกรอบ
+          padding: const EdgeInsets.all(16), // 👈 ระยะด้านในกรอบ
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.black),
             boxShadow: const [
               BoxShadow(
@@ -181,7 +181,7 @@ class _ActionButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black26),
+                border: Border.all(color: Colors.grey),
               ),
               child: Center(
                 child: Column(

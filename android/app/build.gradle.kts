@@ -7,12 +7,15 @@ plugins {
 
 android {
     namespace = "com.example.flutter_application_1"
+<<<<<<< HEAD
     compileSdk = 36
 
     defaultConfig {
         minSdk = 30 
         targetSdk = 33 
     }
+=======
+    compileSdk = 33
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -25,15 +28,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.flutter_application_1"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-    }
+    applicationId = "com.example.flutter_application_1"
+    minSdk = 30       // Android 11
+    targetSdk = 33    // Android 13
+    versionCode = flutter.versionCode
+    versionName = flutter.versionName
+}
 
     buildTypes {
         release {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
-import 'package:flutter/cupertino.dart';
 import 'equipment_view.dart';
 import 'equipment_edit.dart';
 
@@ -33,41 +32,32 @@ class _AssetListPageState extends State<AssetListPage> {
   bool showFilter = false;
 
   InputDecoration _dropdownDecoration() {
-  return InputDecoration(
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    return InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
 
-    // ✅ สีพื้นหลัง
-    filled: true,
-    fillColor: Colors.grey.shade100,
+      // ✅ สีพื้นหลัง
+      filled: true,
+      fillColor: Colors.grey.shade100,
 
-    // ✅ กรอบปกติ
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Colors.grey,
-        width: 1,
+      // ✅ กรอบปกติ
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.grey, width: 1),
       ),
-    ),
 
-    // ✅ กรอบตอนโฟกัส
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Colors.blueAccent,
-        width: 2,
+      // ✅ กรอบตอนโฟกัส
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
       ),
-    ),
 
-    // ✅ กรอบตอน error
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Colors.red,
-        width: 1.5,
+      // ✅ กรอบตอน error
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
       ),
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,16 +68,16 @@ class _AssetListPageState extends State<AssetListPage> {
       /// APP BAR
       /// =========================
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0047AB),
+        backgroundColor: _getColorByCategory(widget.categoryId),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'การจัดการข้อมูลของอุปกรณ์',
-          style: TextStyle(
+        title: Text(
+          '${widget.categoryName}ทั้งหมด',
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -755,13 +745,13 @@ IconData _getIconByCategory(int id) {
     case 1:
       return Icons.sports_baseball; // ลูกบอลดับเพลิง
     case 2:
-      return Icons.local_fire_department; // ตู้น้ำดับเพลิง
+      return Icons.fire_hydrant_alt; // ตู้น้ำดับเพลิง
     case 3:
       return Icons.warning_amber; // สัญญาณแจ้งเหตุ
     case 4:
       return Icons.grain; // ทรายซับสารเคมี
     case 6:
-      return CupertinoIcons.drop_fill; // 👈 อ่างล้างตา (ชัดกว่า drop)
+      return Icons.opacity; // 👈 อ่างล้างตา (ชัดกว่า drop)
     case 7:
       return Icons.lightbulb; // ไฟฉุกเฉิน
     default:
@@ -774,9 +764,9 @@ Color _getColorByCategory(int id) {
     case 0:
       return Colors.red;
     case 1:
-      return Colors.orange;
+      return const Color(0xFF0047AB);
     case 2:
-      return Colors.deepOrange;
+      return Colors.deepOrangeAccent;
     case 3:
       return Colors.amber;
     case 4:
