@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
-import '/---check---/qr_scan_page.dart';
+import 'equipment_qrcode.dart';
 // อยู่โฟลเดอร์เดียวกัน
 import 'equipment_list.dart';
 
@@ -162,9 +162,9 @@ class EquipmentManagementPage extends StatelessWidget {
       case 0:
         return Colors.red;
       case 1:
-        return Colors.orange;
+        return const Color(0xFF0047AB);
       case 2:
-        return Colors.deepOrange;
+        return Colors.deepOrangeAccent;
       case 3:
         return Colors.amber;
       case 4:

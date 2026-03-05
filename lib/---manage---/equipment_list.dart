@@ -32,48 +32,36 @@ class _AssetListPageState extends State<AssetListPage> {
   bool showFilter = false;
 
   InputDecoration _dropdownDecoration() {
-  return InputDecoration(
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    return InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
 
-    // ✅ สีพื้นหลัง
-    filled: true,
-    fillColor: Colors.grey.shade100,
+      // ✅ สีพื้นหลัง
+      filled: true,
+      fillColor: Colors.grey.shade100,
 
-    // ✅ กรอบปกติ
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Colors.grey,
-        width: 1,
+      // ✅ กรอบปกติ
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.grey, width: 1),
       ),
-    ),
 
-    // ✅ กรอบตอนโฟกัส
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Colors.blueAccent,
-        width: 2,
+      // ✅ กรอบตอนโฟกัส
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
       ),
-    ),
 
-    // ✅ กรอบตอน error
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Colors.red,
-        width: 1.5,
+      // ✅ กรอบตอน error
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
-      
       backgroundColor: Colors.white,
 
       /// =========================
@@ -89,7 +77,7 @@ class _AssetListPageState extends State<AssetListPage> {
           '${widget.categoryName}ทั้งหมด',
           style: const TextStyle(
             color: Colors.white,
-    
+
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -776,9 +764,9 @@ Color _getColorByCategory(int id) {
     case 0:
       return Colors.red;
     case 1:
-      return Colors.orange;
+      return const Color(0xFF0047AB);
     case 2:
-      return Colors.deepOrange;
+      return Colors.deepOrangeAccent;
     case 3:
       return Colors.amber;
     case 4:
