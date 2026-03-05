@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.flutter_application_1"
-<<<<<<< HEAD
+
     compileSdk = 36
 
     defaultConfig {
