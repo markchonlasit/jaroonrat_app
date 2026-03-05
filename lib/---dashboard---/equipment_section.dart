@@ -220,7 +220,7 @@ class _EquipmentSectionState extends State<EquipmentSection> {
               children: [
                 /// 🔹 Category Dropdown
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: _buildStyledDropdown<int>(
                     value: selectedCategoryId,
                     items: categories
@@ -246,7 +246,7 @@ class _EquipmentSectionState extends State<EquipmentSection> {
 
                 /// 🔹 Month Picker Button
                 Expanded(
-                  flex: 1,
+                  flex: 2,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(14),
                     onTap: _pickMonthYear,

@@ -286,7 +286,7 @@ class _NotificationPageState extends State<NotificationPage> {
  
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
