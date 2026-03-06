@@ -32,6 +32,7 @@ dependencies:
   flutter:
     sdk: flutter
   mobile_scanner: ^3.5.5
+  http_parser: ^4.0.2
 
   flutter_localizations:
     sdk: flutter

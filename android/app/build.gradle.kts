@@ -7,6 +7,14 @@ plugins {
 
 android {
     namespace = "com.example.flutter_application_1"
+
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 30 
+        targetSdk = 33 
+    }
+=======
     compileSdk = 33
     ndkVersion = flutter.ndkVersion
 
