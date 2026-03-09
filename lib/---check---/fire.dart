@@ -7,9 +7,9 @@ import '/---Inspect---/inspectfire.dart';
 import '/---audit---/audit_fire_detail.dart';
 
 class FirePage extends StatefulWidget {
+  const FirePage({super.key,});
   final int categoryId = 0; // กำหนดเป็น 0 สำหรับหน้าถังดับเพลิง
-
-  const FirePage({super.key});
+  
 
   @override
   State<FirePage> createState() => _FirePageState();
@@ -480,7 +480,14 @@ class _FirePageState extends State<FirePage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AuditFireDetailPage(auditedAssetIds: [])),
+                    MaterialPageRoute(
+                      builder: (_) => AuditFireDetailPage(
+                        assetId: item['id'] as int,
+                        assetName: (item['name'] ?? '').toString(),
+                        assetType: (item['type'] ?? '').toString(),
+                      
+                      ),
+                      ),
                   );
                 },
                 icon: Icons.history,

@@ -3,17 +3,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import '/services/auth_service.dart';
 import 'package:http_parser/http_parser.dart';
+import '/services/auth_service.dart';
 
 class InspectFirePage extends StatefulWidget {
   final int assetId;
   final String assetName;
+  final int? auditId;
 
   const InspectFirePage({
     super.key,
     required this.assetId,
     required this.assetName,
+    this.auditId,
   });
 
   @override
@@ -29,6 +31,8 @@ class _InspectFirePageState extends State<InspectFirePage> {
   final TextEditingController remarkController = TextEditingController();
 
   File? imageFile;
+  String imageUrl = "";
+
   final ImagePicker picker = ImagePicker();
 
   String get checklistApi =>
@@ -37,7 +41,18 @@ class _InspectFirePageState extends State<InspectFirePage> {
   @override
   void initState() {
     super.initState();
-    fetchChecklist();
+
+    if (widget.auditId != null) {
+      fetchAuditDetail();
+    } else {
+      fetchChecklist();
+    }
+  }
+
+  @override
+  void dispose() {
+    remarkController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchChecklist() async {
@@ -49,103 +64,132 @@ class _InspectFirePageState extends State<InspectFirePage> {
 
       if (res.statusCode == 200) {
         final List<dynamic> data = jsonDecode(res.body);
+
+        if (!mounted) return;
+
         setState(() {
           checklist = List<Map<String, dynamic>>.from(data);
           isLoading = false;
         });
       } else {
-        _showError('โหลด checklist ไม่สำเร็จ (Status: ${res.statusCode})');
+        _showError('โหลด checklist ไม่สำเร็จ');
+        if (!mounted) return;
         setState(() => isLoading = false);
       }
     } catch (e) {
       _showError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      if (!mounted) return;
       setState(() => isLoading = false);
     }
   }
 
-Future<void> takePhoto() async {
-  final XFile? picked = await picker.pickImage(
-    source: ImageSource.camera,
-    imageQuality: 30, // 🔥 ลดคุณภาพ (0-100)
-  );
+  Future<void> fetchAuditDetail() async {
+    try {
+      final detailRes = await http.get(
+        Uri.parse(
+            'https://api.jaroonrat.com/safetyaudit/api/auditdetail/${widget.auditId}'),
+        headers: {'Authorization': 'Bearer ${AuthService.token}'},
+      );
 
-  if (picked != null) {
-    setState(() => imageFile = File(picked.path));
-  }
-}
+      debugPrint("AUDIT DETAIL: ${detailRes.body}");
 
-Future<String?> _uploadImage() async {
-  try {
-    if (imageFile == null) return null;
-  print("In Function _uploadImage");
-    final DateTime now = DateTime.now();
-    final String yyyymm =
-        "${now.year}${now.month.toString().padLeft(2, '0')}";
-  print("File to Upload: ${imageFile!.path}");
-   final fileSize = await imageFile!.length();
-final sizeInMB = fileSize / (1024 * 1024);
-print("📦 File to Upload Size: ${sizeInMB.toStringAsFixed(2)} MB");
-   
-    final uri = Uri.parse(
-        'https://api.jaroonrat.com/safetyaudit/api/uploadpicture');
+      if (detailRes.statusCode == 200) {
+        final data = jsonDecode(detailRes.body);
 
-    final request = http.MultipartRequest('POST', uri);
+        checklist = List<Map<String, dynamic>>.from(data['checklist']);
 
-    request.headers['Authorization'] =
-        'Bearer ${AuthService.token}';
-    request.headers['Accept'] = '*/*';
+        for (var item in data['checklist']) {
+          selectedResult[item['id']] = item['status'] == 1;
+        }
 
-    request.fields['assetid'] =
-        widget.assetId.toString();
-    request.fields['yyyymm'] = yyyymm;
+        imageUrl = data['url'] ?? "";
+      }
 
-    String extension =
-        imageFile!.path.split('.').last.toLowerCase();
+      final auditRes = await http.get(
+        Uri.parse(
+            'https://api.jaroonrat.com/safetyaudit/api/audit/${widget.auditId}'),
+        headers: {'Authorization': 'Bearer ${AuthService.token}'},
+      );
 
-    MediaType mediaType;
+      debugPrint("AUDIT API: ${auditRes.body}");
 
-    if (extension == 'png') {
-      mediaType = MediaType('image', 'png');
-    } else {
-      mediaType = MediaType('image', 'jpeg');
+      if (auditRes.statusCode == 200) {
+        final auditData = jsonDecode(auditRes.body);
+
+        remarkController.text =
+            auditData['remark'] ??
+            auditData['note'] ??
+            auditData['audit']?['remark'] ??
+            "";
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("AUDIT DETAIL ERROR: $e");
+      if (!mounted) return;
+      setState(() => isLoading = false);
     }
+  }
 
-    final file = await http.MultipartFile.fromPath(
-      'file',
-      imageFile!.path,
-      filename: imageFile!.path.split('/').last,
-      contentType: mediaType,
+  Future<void> takePhoto() async {
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 35,
+      maxWidth: 1600,
+      maxHeight: 1600,
     );
 
-    request.files.add(file);
-
-    final streamedResponse = await request.send();
-    final response =
-        await http.Response.fromStream(streamedResponse);
-
-    print("UPLOAD STATUS: ${response.statusCode}");
-    print("UPLOAD RESPONSE: ${response.body}");
-
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> json =
-          jsonDecode(response.body);
-
-      // 🔥 แก้ตรงนี้ให้ cast เป็น String ชัดเจน
-      final String? path =
-          json['message']?.toString();
-
-      print("RETURN PATH : $path");
-
-      return path; // 👈 คืนค่าตรง ๆ เลย
+    if (picked != null) {
+      setState(() => imageFile = File(picked.path));
     }
-
-    return null;
-  } catch (e) {
-    print("UPLOAD ERROR : $e");
-    return null;
   }
-}
+
+  Future<String?> _uploadImage() async {
+    try {
+      if (imageFile == null) return null;
+
+      final DateTime now = DateTime.now();
+      final String yyyymm =
+          "${now.year}${now.month.toString().padLeft(2, '0')}";
+
+      final uri =
+          Uri.parse('https://api.jaroonrat.com/safetyaudit/api/uploadpicture');
+
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers['Authorization'] = 'Bearer ${AuthService.token}';
+
+      request.fields['assetid'] = widget.assetId.toString();
+      request.fields['yyyymm'] = yyyymm;
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          imageFile!.path,
+          filename: "upload.jpg",
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return json['message'].toString();
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint("UPLOAD ERROR: $e");
+      return null;
+    }
+  }
+
   Future<void> submitAudit() async {
     if (selectedResult.length != checklist.length) {
       _showError('กรุณาตรวจสอบให้ครบทุกข้อ');
@@ -155,73 +199,62 @@ print("📦 File to Upload Size: ${sizeInMB.toStringAsFixed(2)} MB");
     setState(() => isSubmitting = true);
 
     try {
-      String imageUrl = "";
-      print("IMAGE FILE BEFORE UPLOAD : ${imageFile?.path}");
-      /// ✅ Upload ก่อน
+      String imgUrl = imageUrl;
+
       if (imageFile != null) {
-        final String? uploadedPath =
-            await _uploadImage();
-
-        print("UPLOADED PATH IN SUBMIT: $uploadedPath");
-
+        final String? uploadedPath = await _uploadImage();
         if (uploadedPath == null) {
           _showError('อัปโหลดรูปภาพไม่สำเร็จ');
           setState(() => isSubmitting = false);
           return;
         }
-
-        imageUrl = uploadedPath;
+        imgUrl = uploadedPath;
       }
 
       final Map<String, dynamic> payload = {
         "assetid": widget.assetId,
         "remark": remarkController.text,
-        "url": imageUrl,
+        "url": imgUrl,
         "ans": checklist.map((item) {
           final int id = item['id'];
-          return {
-            "id": id,
-            "status": selectedResult[id]! ? 1 : 2
-          };
+          return {"id": id, "status": selectedResult[id]! ? 1 : 2};
         }).toList(),
       };
-      print("PAYLOAD: ${jsonEncode(payload)}");
 
-      final http.Response res = await http.post(
-        Uri.parse(
-            'https://api.jaroonrat.com/safetyaudit/api/submitaudit'),
-        headers: {
-          'Authorization':
-              'Bearer ${AuthService.token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(payload),
-      );
+      final Uri url = widget.auditId != null
+          ? Uri.parse(
+              'https://api.jaroonrat.com/safetyaudit/api/audit/${widget.auditId}')
+          : Uri.parse(
+              'https://api.jaroonrat.com/safetyaudit/api/submitaudit');
 
-  print("SUBMIT STATUS: ${res.statusCode}");
-  print("SUBMIT RESPONSE BODY: ${res.body}");
+      final http.Response res = widget.auditId != null
+          ? await http.put(
+              url,
+              headers: {
+                'Authorization': 'Bearer ${AuthService.token}',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode(payload),
+            )
+          : await http.post(
+              url,
+              headers: {
+                'Authorization': 'Bearer ${AuthService.token}',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode(payload),
+            );
 
-if (res.statusCode == 200) {
-  if (!mounted) return;
+      debugPrint("SUBMIT RESULT: ${res.body}");
 
-  Navigator.pop(context);
-
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => InspectFirePage(
-        assetId: widget.assetId,
-        assetName: widget.assetName,
-      ),
-    ),
-  );
-} else if (res.statusCode == 409) {
-  _showError("มีข้อมูลรายการนี้แล้ว (409)");
-} else {
-  _showError(
-      'บันทึกข้อมูลไม่สำเร็จ (Status: ${res.statusCode})\n${res.body}');
-}
+      if (res.statusCode == 200) {
+        if (!mounted) return;
+        Navigator.pop(context, true);
+      } else {
+        _showError('บันทึกข้อมูลไม่สำเร็จ');
+      }
     } catch (e) {
+      debugPrint("SUBMIT ERROR $e");
       _showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
       if (mounted) {
@@ -231,8 +264,9 @@ if (res.statusCode == 200) {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
   }
 
   void _confirmCancel() {
@@ -240,8 +274,7 @@ if (res.statusCode == 200) {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('ยืนยันการยกเลิก'),
-        content:
-            const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
+        content: const Text('ข้อมูลที่กรอกจะไม่ถูกบันทึก'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -262,138 +295,48 @@ if (res.statusCode == 200) {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        backgroundColor: Colors.red,
-        title: Text(
-          widget.assetName,
-          style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white),
-        ),
-      ),
-      body: Stack(
-        children: [
-          isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(),
-                )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView(
-                        padding:
-                            const EdgeInsets.all(16),
-                        children: [
-                          ...checklist.map(
-                              (item) {
-                            final int id =
-                                item['id'];
-                            return _checkCard(
-                                item, id);
-                          }),
-                          const SizedBox(height: 10),
-                          _remarkField(),
-                          const SizedBox(height: 12),
-                          _cameraButton(),
-                          if (imageFile != null) ...[
-                            const SizedBox(
-                                height: 12),
-                            Image.file(
-                                imageFile!,
-                                height: 180)
-                          ]
-                        ],
-                      ),
-                    ),
-                    _bottomButtons()
-                  ],
-                ),
-          if (isSubmitting)
-            Container(
-              color:
-                  // ignore: deprecated_member_use
-                  Colors.black.withOpacity(0.5),
-              child: const Center(
-                child:
-                    CircularProgressIndicator(),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _checkCard(
-      Map<String, dynamic> item,
-      int id) {
+  Widget _checkCard(Map<String, dynamic> item, int id) {
     return Container(
-      margin:
-          const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: const [
-          BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6)
+          BoxShadow(color: Colors.black12, blurRadius: 6),
         ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            item['name'],
-            style: const TextStyle(
-                fontWeight:
-                    FontWeight.bold),
-          ),
+          Text(item['name'],
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           InkWell(
-            onTap: () => setState(
-                () =>
-                    selectedResult[id] =
-                        true),
+            onTap: () => setState(() => selectedResult[id] = true),
             child: Row(children: [
               Icon(
-                selectedResult[id] ==
-                        true
+                selectedResult[id] == true
                     ? Icons.check_circle
-                    : Icons
-                        .radio_button_unchecked,
+                    : Icons.radio_button_unchecked,
                 color: Colors.green,
               ),
               const SizedBox(width: 8),
-              Expanded(
-                  child: Text(
-                      item['detail_Y'])),
+              Expanded(child: Text(item['detail_Y'])),
             ]),
           ),
           const SizedBox(height: 8),
           InkWell(
-            onTap: () => setState(
-                () =>
-                    selectedResult[id] =
-                        false),
+            onTap: () => setState(() => selectedResult[id] = false),
             child: Row(children: [
               Icon(
-                selectedResult[id] ==
-                        false
+                selectedResult[id] == false
                     ? Icons.cancel
-                    : Icons
-                        .radio_button_unchecked,
+                    : Icons.radio_button_unchecked,
                 color: Colors.red,
               ),
               const SizedBox(width: 8),
-              Expanded(
-                  child: Text(
-                      item['detail_N'])),
+              Expanded(child: Text(item['detail_N'])),
             ]),
           ),
         ],
@@ -410,8 +353,7 @@ if (res.statusCode == 200) {
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -420,59 +362,90 @@ if (res.statusCode == 200) {
   Widget _cameraButton() {
     return ElevatedButton.icon(
       onPressed: takePhoto,
-      icon:
-          const Icon(Icons.camera_alt),
-      label:
-          const Text('ถ่ายรูป'),
+      icon: const Icon(Icons.camera_alt),
+      label: const Text('ถ่ายรูป'),
     );
   }
 
   Widget _bottomButtons() {
     return Padding(
-      padding:
-          const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           Expanded(
             child: ElevatedButton(
-              onPressed:
-                  _confirmCancel,
-              style:
-                  ElevatedButton
-                      .styleFrom(
-                backgroundColor:
-                    Colors.grey,
-                minimumSize:
-                    const Size
-                        .fromHeight(50),
+              onPressed: _confirmCancel,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+                minimumSize: const Size.fromHeight(50),
               ),
               child:
-                  const Text('ยกเลิก',
-                      style: TextStyle(
-                          color: Colors.white)),
+                  const Text('ยกเลิก', style: TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: isSubmitting
-                  ? null
-                  : submitAudit,
-              style:
-                  ElevatedButton
-                      .styleFrom(
-                backgroundColor:
-                    Colors.red,
-                minimumSize:
-                    const Size
-                        .fromHeight(50),
+              onPressed: isSubmitting ? null : submitAudit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                minimumSize: const Size.fromHeight(50),
               ),
               child:
-                  const Text('บันทึก',
-                      style: TextStyle(
-                          color: Colors.white)),
+                  const Text('บันทึก', style: TextStyle(color: Colors.white)),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade100,
+      appBar: AppBar(
+        backgroundColor: Colors.red,
+        title: Text(widget.assetName,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white)),
+      ),
+      body: Stack(
+        children: [
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          ...checklist.map((item) {
+                            final int id = item['id'];
+                            return _checkCard(item, id);
+                          }),
+                          const SizedBox(height: 10),
+                          _remarkField(),
+                          const SizedBox(height: 12),
+                          _cameraButton(),
+                          if (imageFile != null) ...[
+                            const SizedBox(height: 12),
+                            Image.file(imageFile!, height: 180)
+                          ] else if (imageUrl.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Image.network(imageUrl, height: 180)
+                          ]
+                        ],
+                      ),
+                    ),
+                    _bottomButtons()
+                  ],
+                ),
+          if (isSubmitting)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );

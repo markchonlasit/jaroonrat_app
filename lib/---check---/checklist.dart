@@ -132,7 +132,7 @@ class ChecklistPage extends StatelessWidget {
   /// ================= NAVIGATION =================
   void _navigateToCategory(BuildContext context, int id) {
     final Map<int, Widget> pages = {
-      0: const fire.FirePage(),
+      0: const fire.FirePage(), 
       1: const BallPage(),
       2: const FhcPage(),
       3: const AlarmPage(),
@@ -165,7 +165,7 @@ class ChecklistPage extends StatelessWidget {
       case 6:
         return Icons.opacity;
       case 7:
-        return Icons.flash_on;
+        return Icons.lightbulb;
       default:
         return Icons.inventory_2;
     }
