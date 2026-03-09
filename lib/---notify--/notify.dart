@@ -283,8 +283,6 @@ class _NotificationPageState extends State<NotificationPage> {
   /// SUMMARY CARD (UI แบบในรูป + Logic total/filtered)
   /// =========================
   Widget _summaryCard(int total, int filtered) {
- 
-
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Container(
@@ -755,14 +753,12 @@ class _NotificationPageState extends State<NotificationPage> {
   Widget _statusBoxWithIcon(
     String title,
     int count,
-    Color mainColor, // สีหลัก (ส้ม/เขียว/แดง)
+    Color mainColor,
     IconData icon,
     String statusKey,
   ) {
     bool isSelected = selectedStatusCategory == statusKey;
 
-    // กำหนดสีพื้นหลังอ่อน
-    // ignore: deprecated_member_use
     final Color lightBackgroundColor = mainColor.withOpacity(0.15);
 
     return Expanded(
@@ -772,50 +768,74 @@ class _NotificationPageState extends State<NotificationPage> {
             selectedStatusCategory = isSelected ? "ทั้งหมด" : statusKey;
           });
         },
-        child: AnimatedContainer(
+        child: AnimatedScale(
+          scale: isSelected ? 1.05 : 1.0,
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: lightBackgroundColor, // ✅ พื้นหลังสีอ่อนตลอด
-            border: Border.all(color: mainColor, width: 1.5),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              /// วงกลมไอคอน
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  // ignore: deprecated_member_use
-                  color: mainColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: mainColor, size: 24),
-              ),
-              const SizedBox(height: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
 
-              /// ชื่อสถานะ
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              const SizedBox(height: 4),
+              // สีพื้นหลัง
+              color: isSelected
+                  ? mainColor.withOpacity(0.25)
+                  : lightBackgroundColor,
 
-              /// ตัวเลขจำนวน
-              Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: mainColor, // ✅ ตัวเลขเป็นสีเข้ม
-                ),
+              // กรอบ
+              border: Border.all(
+                color: mainColor,
+                width: isSelected ? 2.5 : 1.5,
               ),
-            ],
+
+              // เงาเมื่อเลือก
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: mainColor.withOpacity(0.4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                /// วงกลมไอคอน
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: mainColor.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: mainColor, size: 24),
+                ),
+                const SizedBox(height: 12),
+
+                /// ชื่อสถานะ
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                /// ตัวเลข
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: mainColor,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

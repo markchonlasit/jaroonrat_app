@@ -79,6 +79,13 @@ class EquipmentViewPage extends StatelessWidget {
                   value: data['active'] == 1 ? 'active' : 'inactive',
                 ),
 
+                if (data['expdate'] != null && data['expdate'].toString().isNotEmpty)
+                  infoField(
+                    icon: Icons.schedule,
+                    label: '',
+                    value: data['expdate'],
+                  ),
+
                 const SizedBox(height: 20),
                 _titleBar('การจัดการอุปกรณ์'),
 

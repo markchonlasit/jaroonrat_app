@@ -24,8 +24,6 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
   // Local styling helpers (inline so no extra files are required)
   static const double _pagePadding = 16.0;
 
-
-
   @override
   void initState() {
     super.initState();
@@ -104,8 +102,18 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
           }
 
           if (selectedPeriod == "สัปดาห์นี้") {
-            final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-            return date.isAfter(startOfWeek);
+            final startOfWeek = DateTime(
+              now.year,
+              now.month,
+              now.day - (now.weekday - 1),
+            );
+
+            final endOfWeek = startOfWeek.add(const Duration(days: 7));
+
+            return date.isAfter(
+                  startOfWeek.subtract(const Duration(seconds: 1)),
+                ) &&
+                date.isBefore(endOfWeek);
           }
 
           if (selectedPeriod == "เดือนนี้") {
@@ -151,10 +159,14 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
           Text(
             'จาก ${parts[0].trim()}',
             style: const TextStyle(color: Colors.red),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             'เป็น ${parts[1].trim()}',
             style: const TextStyle(color: Colors.green),
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       );
@@ -403,7 +415,7 @@ class _AssetHistoryPageState extends State<AssetHistoryPage> {
             const SizedBox(height: 12),
 
             /// 🔎 Search + Period
-           buildSearchSection(),
+            buildSearchSection(),
 
             const SizedBox(height: 16),
 
