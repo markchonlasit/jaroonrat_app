@@ -759,6 +759,7 @@ class _NotificationPageState extends State<NotificationPage> {
   ) {
     bool isSelected = selectedStatusCategory == statusKey;
 
+    // ignore: deprecated_member_use
     final Color lightBackgroundColor = mainColor.withOpacity(0.15);
 
     return Expanded(
@@ -779,6 +780,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
               // สีพื้นหลัง
               color: isSelected
+                  // ignore: deprecated_member_use
                   ? mainColor.withOpacity(0.25)
                   : lightBackgroundColor,
 
@@ -792,6 +794,7 @@ class _NotificationPageState extends State<NotificationPage> {
               boxShadow: isSelected
                   ? [
                       BoxShadow(
+                        // ignore: deprecated_member_use
                         color: mainColor.withOpacity(0.4),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
@@ -806,6 +809,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
+                    // ignore: deprecated_member_use
                     color: mainColor.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),

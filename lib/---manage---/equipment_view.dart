@@ -82,7 +82,7 @@ class EquipmentViewPage extends StatelessWidget {
                 if (data['expdate'] != null && data['expdate'].toString().isNotEmpty)
                   infoField(
                     icon: Icons.schedule,
-                    label: '',
+                    label: 'วันหมดอายุ',
                     value: data['expdate'],
                   ),
 

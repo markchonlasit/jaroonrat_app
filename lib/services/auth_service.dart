@@ -9,10 +9,12 @@ class AuthService {
   static String? username;
 
   static Future<Map<String, dynamic>> login(
-    String username,
-    String password,
-  ) async {
+      String username,
+      String password,
+      ) async {
+
     try {
+
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
         headers: {
@@ -25,24 +27,43 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
+
         final data = jsonDecode(response.body);
+
         token = data['token'];
 
         return {
           'success': true,
-          'token': token,
+          'token': token
+        };
+
+      }
+
+      if (response.statusCode == 401) {
+        return {
+          'success': false,
+          'message': 'username หรือ password ไม่ถูกต้อง'
         };
       }
 
       return {
         'success': false,
-        'message': 'Login ไม่สำเร็จ',
+        'message': 'ไม่สามารถเข้าสู่ระบบได้'
       };
+
     } catch (e) {
+
       return {
         'success': false,
-        'message': 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้',
+        'message': 'ไม่สามารถเชื่อมต่อ Server ได้'
       };
+
     }
+
+  }
+
+  static void logout() {
+    token = null;
+    username = null;
   }
 }

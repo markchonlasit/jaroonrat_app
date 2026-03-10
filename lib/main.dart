@@ -5,11 +5,14 @@ import 'utils/http_override.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+final GlobalKey<NavigatorState> navigatorKey =
+    GlobalKey<NavigatorState>(); // 👈 เพิ่มบรรทัดนี้
+
 void main() async {
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeDateFormatting('th_TH', null); // โหลด locale ไทย
+  await initializeDateFormatting('th_TH', null);
 
   runApp(const MyApp());
 }
@@ -20,6 +23,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // 👈 เพิ่มตรงนี้
       debugShowCheckedModeBanner: false,
 
       locale: const Locale('th', 'TH'),
@@ -31,6 +35,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+
       home: LoginPage(),
     );
   }
