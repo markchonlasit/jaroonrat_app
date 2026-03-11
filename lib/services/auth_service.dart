@@ -2,9 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl =
-      'https://api.jaroonrat.com/safetyaudit';
-
+  static const String baseUrl ='https://api.jaroonrat.com/safetyaudit';
   static String? token;
   static String? username;
 
@@ -55,7 +53,7 @@ class AuthService {
 
       return {
         'success': false,
-        'message': 'ไม่สามารถเชื่อมต่อ Server ได้'
+        'message': 'ไม่สามารถเข้าสู่ระบบได้'
       };
 
     }
