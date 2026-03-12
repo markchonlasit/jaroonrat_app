@@ -120,7 +120,7 @@ class _AuditFireDetailPageState extends State<AuditFireDetailPage> {
             builder: (_) => InspectFirePage(
               assetId: widget.assetId,
               assetName: widget.assetName,
-              auditId: item['id'],
+              auditId: item['id'], assetType: widget.assetType,
             ),
           ),
         );

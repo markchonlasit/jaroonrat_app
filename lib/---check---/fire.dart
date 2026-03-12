@@ -296,31 +296,37 @@ class _FirePageState extends State<FirePage> {
     );
   }
 
-  Widget _actionButton({
-    required VoidCallback onPressed,
-    required IconData icon,
-    required String label,
-    required Color color,
-    Color textColor = Colors.white,
-  }) {
-    return SizedBox(
-      width: 85,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: textColor,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+Widget _actionButton({
+  required VoidCallback onPressed,
+  required IconData icon,
+  required String label,
+  required Color color,
+  Color textColor = Colors.white,
+}) {
+  return SizedBox(
+    width: 70,
+    child: ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: textColor,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
-    );
-  }
+      child: Text(
+        label,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
 
   Widget _summaryCard(int total, int filtered) {
     const icon = Icons.fire_extinguisher;
@@ -379,127 +385,190 @@ class _FirePageState extends State<FirePage> {
     );
   }
 
-  Widget _assetCard(dynamic item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
+Widget _assetCard(dynamic item) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: Colors.grey.shade300),
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          // ignore: deprecated_member_use
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        /// ไอคอน
+        Column(
+          children: [
+            const Icon(Icons.fire_extinguisher, size: 46, color: Colors.red),
+            const SizedBox(height: 8),
+            _chip('${item['branch'] ?? '-'}', color: Colors.blue.shade50),
+          ],
+        ),
+
+        const SizedBox(width: 16),
+
+        /// ข้อมูล
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.fire_extinguisher, size: 46, color: Colors.red),
+
+              _chip(
+                '${item['name'] ?? '-'}',
+                color: const Color.fromARGB(255, 235, 235, 235),
+              ),
+
               const SizedBox(height: 8),
-              _chip('${item['branch'] ?? '-'}', color: Colors.blue.shade50),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _chip('${item['name'] ?? '-'}', color: const Color.fromARGB(255, 235, 235, 235)),
-                const SizedBox(height: 8),
-                Builder(
-                  builder: (context) {
-                    final type = item['type']?.toString().toLowerCase() ?? '';
-                    final Map<String, Color> typeColors = {
-                      'dry': Colors.blue.shade200,
-                      'เขียว': Colors.green.shade200,
-                      'แดง': Colors.red.shade200,
-                      'เงิน': Colors.grey.shade400,
-                    };
-                    return _chip('ประเภท ${item['type'] ?? '-'}', color: typeColors[type] ?? Colors.grey.shade200);
-                  },
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 18, color: Colors.red),
-                    const SizedBox(width: 4),
-                    Expanded(child: Text(item['location'] ?? '-', style: const TextStyle(fontSize: 14))),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 18, color: Colors.orange),
-                    const SizedBox(width: 4),
-                    Expanded(
-                        child: Text(
-                          // เช็คว่า item['expdate'] เป็น null หรือว่างไหม
-                          (item['expdate'] != null &&
-                                  item['expdate'].toString().isNotEmpty)
-                              ? "วันหมดอายุ ${item['expdate'].toString().split(' ')[0]}"
-                              : "วันหมดอายุ -", // ถ้าเป็น null ให้แสดง -
-                          style: const TextStyle(fontSize: 15),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      item['active'] == 1 ? Icons.check_circle : Icons.cancel,
-                      color: item['active'] == 1 ? Colors.green : Colors.red,
-                      size: 18,
+
+              Builder(
+                builder: (context) {
+                  final type = item['type']?.toString().toLowerCase() ?? '';
+
+                  final Map<String, Color> typeColors = {
+                    'dry': Colors.blue.shade200,
+                    'เขียว': Colors.green.shade200,
+                    'แดง': Colors.red.shade200,
+                    'เงิน': Colors.grey.shade400,
+                  };
+
+                  return _chip(
+                    'ประเภท ${item['type'] ?? '-'}',
+                    color: typeColors[type] ?? Colors.grey.shade200,
+                  );
+                },
+              ),
+
+              const SizedBox(height: 8),
+
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 18, color: Colors.red),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      item['location'] ?? '-',
+                      style: const TextStyle(fontSize: 14),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      item['active'] == 1 ? 'ใช้งาน' : 'ไม่ได้ใช้งาน',
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 4),
+
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 18, color: Colors.orange),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      (item['expdate'] != null &&
+                              item['expdate'].toString().isNotEmpty)
+                          ? "วันหมดอายุ ${item['expdate'].toString().split(' ')[0]}"
+                          : "วันหมดอายุ -",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 4),
+
+              Row(
+                children: [
+                  Icon(
+                    item['active'] == 1
+                        ? Icons.check_circle
+                        : Icons.cancel,
+                    color: item['active'] == 1
+                        ? Colors.green
+                        : Colors.red,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    item['active'] == 1
+                        ? 'ใช้งาน'
+                        : 'ไม่ได้ใช้งาน',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: item['active'] == 1
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 4),
+
+              Row(
+                children: [
+                  Icon(
+                    item['ischeck'] == true
+                        ? Icons.verified
+                        : Icons.error_outline,
+                    color: item['ischeck'] == true
+                        ? Colors.green
+                        : Colors.orange,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      item['ischeck'] == true
+                          ? 'สถานะการตรวจ : ตรวจแล้ว'
+                          : 'สถานะการตรวจ : ยังไม่ได้ตรวจ',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: item['active'] == 1 ? Colors.green : Colors.red,
+                        color: item['ischeck'] == true
+                            ? Colors.green
+                            : Colors.orange,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 10),
-              _actionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AuditFireDetailPage(
-                        assetId: item['id'] as int,
-                        assetName: (item['name'] ?? '').toString(),
-                        assetType: (item['type'] ?? '').toString(),
-                      
-                      ),
-                      ),
-                  );
-                },
-                icon: Icons.history,
-                label: 'ประวัติ',
-                color: Colors.red,
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+
+        /// ปุ่มประวัติ
+        Align(
+          alignment: Alignment.topRight,
+          child: _actionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AuditFireDetailPage(
+                    assetId: item['id'] as int,
+                    assetName: (item['name'] ?? '').toString(),
+                    assetType: (item['type'] ?? '').toString(),
+                  ),
+                ),
+              );
+            },
+            icon: Icons.history,
+            label: 'ประวัติ',
+            color: Colors.red,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -577,6 +646,7 @@ class _FirePageState extends State<FirePage> {
                                   builder: (_) => InspectFirePage(
                                     assetId: item['id'] as int,
                                     assetName: (item['name'] ?? '').toString(),
+                                    assetType: (item['type'] ?? '').toString(),
                                   ),
                                 ),
                               ),

@@ -15,7 +15,7 @@ class InspectFirePage extends StatefulWidget {
     super.key,
     required this.assetId,
     required this.assetName,
-    this.auditId,
+    this.auditId, required String assetType,
   });
 
   @override
