@@ -68,9 +68,8 @@ class ApiService {
     int month,
   ) async {
     final res = await ApiClient.get('/api/dashboard/$categoryId/$month');
-    return jsonDecode(res.body) as Map<String, dynamic>;   
+    return jsonDecode(res.body) as Map<String, dynamic>;
   }
-
 
   // Assetexpdate (categoryid)
   static Future<Map<String, dynamic>> getAssetexpdate(int categoryId) async {
@@ -78,16 +77,27 @@ class ApiService {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
-   // Alert
+  // Alert
   static Future<Map<String, dynamic>> getAlert() async {
     final res = await ApiClient.get('/api/alert');
     return jsonDecode(res.body);
   }
 
- // Asset History(id)
+  // Asset History(id)
   static Future<List<dynamic>> getAssetHistory(int id) async {
-  final res = await ApiClient.get('/api/asset/logs/$id');
-  return jsonDecode(res.body);
-}
+    final res = await ApiClient.get('/api/asset/logs/$id');
+    return jsonDecode(res.body);
+  }
 
+  // SUBMIT AUDIT
+  static Future<bool> uploadpicture(Map<String, dynamic> body) async {
+    final res = await ApiClient.post('/api/uploadpicture', jsonEncode(body));
+    return res.statusCode == 200;
+  }
+
+  // UPDATE ASSET
+  static Future<bool> updateaudit(int id, Map<String, dynamic> data) async {
+    final res = await ApiClient.put('/api/audit/$id', jsonEncode(data));
+    return res.statusCode == 200;
+  }
 }
