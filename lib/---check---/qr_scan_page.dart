@@ -56,7 +56,7 @@ class _QrScanPageState extends State<QrScanPage> {
 
         page = InspectFirePage(
           assetId: assetId,
-          assetName: assetName,
+          assetName: assetName, assetType: '',
         );
       }
 
