@@ -3,6 +3,7 @@ import '/services/api_services.dart';
 import 'equipment_qrcode.dart';
 // อยู่โฟลเดอร์เดียวกัน
 import 'equipment_list.dart';
+import '../---dashboard---/dashboard.dart';
 
 class EquipmentManagementPage extends StatelessWidget {
   const EquipmentManagementPage({super.key});
@@ -19,7 +20,12 @@ class EquipmentManagementPage extends StatelessWidget {
         backgroundColor: const Color(0xFF0047AB),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+            );
+          },
         ),
         title: const Text(
           'หน้าหลัก',
@@ -36,7 +42,7 @@ class EquipmentManagementPage extends StatelessWidget {
       /// =========================
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-        
+
         child: FutureBuilder<List<dynamic>>(
           future: ApiService.getCategory(),
           builder: (context, snapshot) {
@@ -59,36 +65,37 @@ class EquipmentManagementPage extends StatelessWidget {
 
             return Column(
               children: [
-                    const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-            /// 🔥 ปุ่มสแกน QR (อยู่บนสุด)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0047AB),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                /// 🔥 ปุ่มสแกน QR (อยู่บนสุด)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0047AB),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const QrScanPage()),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.qr_code_scanner,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      "สแกน QR เพื่อเข้าถึงอุปกรณ์",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const QrScanPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-                label: const Text(
-                  "สแกน QR เพื่อเข้าถึงอุปกรณ์",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 25),
+                const SizedBox(height: 25),
                 _HeaderCard(total: total),
                 const SizedBox(height: 30),
 

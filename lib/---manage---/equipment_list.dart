@@ -393,7 +393,7 @@ class _AssetListPageState extends State<AssetListPage> {
 
                   /// 📅 เลือกวันหมดอายุ
                   /// 📅 เลือกวันหมดอายุ (เฉพาะ categoryId = 0)
-                  if (widget.categoryId == 0) ...[
+                  if (widget.categoryId == 0 || widget.categoryId == 1) ...[
                     const SizedBox(height: 12),
 
                     GestureDetector(
@@ -599,7 +599,7 @@ class _AssetListPageState extends State<AssetListPage> {
                 ),
                 const SizedBox(height: 4),
 
-                if (widget.categoryId == 0) ...[
+                if (widget.categoryId == 0 || widget.categoryId == 1) ...[
                   Row(
                     children: [
                       const Icon(

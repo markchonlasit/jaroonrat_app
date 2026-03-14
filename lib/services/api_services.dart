@@ -1,6 +1,13 @@
 import 'dart:convert';
 import 'api_client.dart';
 
+class ApiResponse {
+  final int statusCode;
+  final String message;
+
+  ApiResponse({required this.statusCode, required this.message});
+}
+
 class ApiService {
   // PROFILE
   static Future<Map<String, dynamic>> getProfile() async {
@@ -27,9 +34,20 @@ class ApiService {
   }
 
   // UPDATE ASSET
-  static Future<bool> updateAsset(int id, Map<String, dynamic> data) async {
-    final res = await ApiClient.put('/api/asset/$id', jsonEncode(data));
-    return res.statusCode == 200;
+  static Future<ApiResponse> updateAsset(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final res = await ApiClient.put('/api/asset/$id', data);
+
+    String message = "Unknown error";
+
+    try {
+      final body = jsonDecode(res.body);
+      message = body['message'] ?? body['error'] ?? message;
+    } catch (_) {}
+
+    return ApiResponse(statusCode: res.statusCode, message: message);
   }
 
   // CHECKLIST (categoryId / assetId)

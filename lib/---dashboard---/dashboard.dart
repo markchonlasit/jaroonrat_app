@@ -12,8 +12,18 @@ import '/---notify--/notify.dart';
 import 'package:flutter/cupertino.dart';
 import '/services/api_services.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  Future<void> refreshPage() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,16 +50,20 @@ class DashboardPage extends StatelessWidget {
         },
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
-          child: Column(
-            children: const [
-              BranchCard(),
-              SizedBox(height: 6),
-              EquipmentSection(),
-              SizedBox(height: 6),
-              TotalEquipmentSection(),
-            ],
+        child: RefreshIndicator(
+          onRefresh: refreshPage, // 👈 เรียกรีเฟรช
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(), // สำคัญ
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
+            child: Column(
+              children: const [
+                BranchCard(),
+                SizedBox(height: 6),
+                EquipmentSection(),
+                SizedBox(height: 6),
+                TotalEquipmentSection(),
+              ],
+            ),
           ),
         ),
       ),

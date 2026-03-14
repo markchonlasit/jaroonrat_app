@@ -10,6 +10,7 @@ import '/---check---/alarm.dart';
 import '/---check---/sand.dart';
 import '/---check---/eyewash.dart';
 import '/---check---/light.dart';
+import '../---dashboard---/dashboard.dart';
 
 class ChecklistPage extends StatelessWidget {
   const ChecklistPage({super.key});
@@ -24,7 +25,12 @@ class ChecklistPage extends StatelessWidget {
         backgroundColor: const Color(0xFF0047AB),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+            );
+          },
         ),
         title: const Text(
           'หน้าหลัก',
@@ -57,9 +63,7 @@ class ChecklistPage extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const QrScanPage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const QrScanPage()),
                   );
                 },
                 icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
@@ -132,7 +136,7 @@ class ChecklistPage extends StatelessWidget {
   /// ================= NAVIGATION =================
   void _navigateToCategory(BuildContext context, int id) {
     final Map<int, Widget> pages = {
-      0: const fire.FirePage(), 
+      0: const fire.FirePage(),
       1: const BallPage(),
       2: const FhcPage(),
       3: const AlarmPage(),
@@ -142,10 +146,7 @@ class ChecklistPage extends StatelessWidget {
     };
 
     if (pages.containsKey(id)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => pages[id]!),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => pages[id]!));
     }
   }
 
@@ -279,8 +280,7 @@ class _EquipmentItem extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
         ],

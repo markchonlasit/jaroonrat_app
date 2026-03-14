@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/api_services.dart';
+import '../---dashboard---/dashboard.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -161,7 +162,15 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0047AB),
-        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+            );
+          },
+        ),
         title: const Text(
           'หน้าหลัก',
           style: TextStyle(
@@ -169,10 +178,6 @@ class _NotificationPageState extends State<NotificationPage> {
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: loading

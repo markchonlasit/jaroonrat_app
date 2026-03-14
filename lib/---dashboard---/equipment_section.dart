@@ -133,15 +133,15 @@ class _EquipmentSectionState extends State<EquipmentSection> {
   Color _getColorByName(String name) {
     switch (name.trim().toLowerCase()) {
       case 'dry':
-        return Colors.blue;
+        return Colors.blue.shade400;
       case 'เงิน':
-        return Colors.grey;
+        return Colors.grey.shade400;
       case 'แดง':
-        return Colors.red;
+        return Colors.red.shade400;
       case 'เขียว':
-        return Colors.green;
+        return Colors.green.shade400;
       default:
-        return Colors.blueGrey; // fallback ถ้าไม่ตรงเงื่อนไข
+        return Colors.blueGrey.shade400; // fallback ถ้าไม่ตรงเงื่อนไข
     }
   }
 
