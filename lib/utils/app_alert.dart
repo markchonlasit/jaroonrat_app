@@ -21,28 +21,29 @@ class AppAlert {
     });
   }
 
-  /// =========================
-  /// 2. ERROR
-  /// =========================
-  static void error(BuildContext context, String message) {
-    QuickAlert.show(
-      context: context,
-      type: QuickAlertType.error,
-      text: message,
-    );
-  }
+/// =========================
+/// 2. ERROR
+/// =========================
+static void error(BuildContext context, String message) {
+  QuickAlert.show(
+    context: context,
+    type: QuickAlertType.error,
+    text: message,
+    confirmBtnText: 'ตกลง', // 👈 เปลี่ยนข้อความปุ่ม
+  );
+}
 
-  /// =========================
-  /// 3. WARNING
-  /// =========================
-  static void warning(BuildContext context, String message) {
-    QuickAlert.show(
-      context: context,
-      type: QuickAlertType.warning,
-      text: message,
-    );
-  }
-
+/// =========================
+/// 3. WARNING
+/// =========================
+static void warning(BuildContext context, String message) {
+  QuickAlert.show(
+    context: context,
+    type: QuickAlertType.warning,
+    text: message,
+    confirmBtnText: 'ตกลง', // 👈 เปลี่ยนข้อความปุ่ม
+  );
+}
   /// =========================
   /// 4. LOADING
   /// =========================
