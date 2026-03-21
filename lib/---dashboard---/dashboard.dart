@@ -7,23 +7,13 @@ import 'equipment_section.dart';
 import 'total_equipment_section.dart';
 import 'branch.dart';
 import '/---manage---/equipment_management.dart';
-import '/---check---/checklist.dart';
+import '/---safety---/checklist.dart';
 import '/---notify--/notify.dart';
 import 'package:flutter/cupertino.dart';
 import '/services/api_services.dart';
 
-class DashboardPage extends StatefulWidget {
+class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
-
-  @override
-  State<DashboardPage> createState() => _DashboardPageState();
-}
-
-class _DashboardPageState extends State<DashboardPage> {
-  Future<void> refreshPage() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {});
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,20 +40,16 @@ class _DashboardPageState extends State<DashboardPage> {
         },
       ),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: refreshPage, // 👈 เรียกรีเฟรช
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(), // สำคัญ
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
-            child: Column(
-              children: const [
-                BranchCard(),
-                SizedBox(height: 6),
-                EquipmentSection(),
-                SizedBox(height: 6),
-                TotalEquipmentSection(),
-              ],
-            ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
+          child: Column(
+            children: const [
+              BranchCard(),
+              SizedBox(height: 6),
+              EquipmentSection(),
+              SizedBox(height: 6),
+              TotalEquipmentSection(),
+            ],
           ),
         ),
       ),

@@ -343,19 +343,23 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                             icon: Icons.edit,
                             color: const Color(0xFFFFC107),
                             onPressed: () async {
-                              final navigator = Navigator.of(context);
+                              // 1. เก็บ Navigator และ ScaffoldMessenger (ถ้าต้องใช้) ไว้ก่อน await
+                              final navigator = Navigator.of(
+                                context,
+                              ); // เก็บ navigator ไว้ก่อน
 
                               AppAlert.successConfirm(
                                 context,
                                 "คุณต้องการแก้ไขข้อมูลอุปกรณ์นี้หรือไม่?",
                                 onConfirm: () async {
+                                  // เตรียมข้อมูล
                                   final Map<String, dynamic> data = {
                                     'name': nameCtrl.text,
                                     'location': locationCtrl.text,
-                                    'active': activeNotifier.value ,
+                                    'active': activeNotifier.value,
                                   };
 
-                                  if ( (categoryName.contains('ถังดับเพลิง') || categoryName.contains('ลูกบอลดับเพลิง') ) &&
+                                  if (categoryName.contains('ถังดับเพลิง') &&
                                       apiDateValue.isNotEmpty) {
                                     data['expdate'] = apiDateValue;
                                   }
@@ -364,44 +368,45 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                                     data['firetype'] = fireTypeNotifier.value;
                                   }
 
-                                  // 🔄 Loading
+                                  // 🔄 แสดง Loading
                                   AppAlert.loading(context);
 
-                                  final res = await ApiService.updateAsset(
+                                  // 🚀 ส่งข้อมูลไปที่ API
+                                  final success = await ApiService.updateAsset(
                                     assetId,
                                     data,
                                   );
 
+                                  // 🛑 ตรวจสอบว่า Widget ยังอยู่ในหน้าจอไหม
                                   if (!context.mounted) return;
 
+                                  // ปิด Loading
                                   AppAlert.close(context);
 
-                                  final message = res.message;
+                                  if (success) {
+                                    AppAlert.success(
+                                      context,
+                                      "แก้ไขข้อมูลสำเร็จ",
+                                    );
+                                    await Future.delayed(
+                                      const Duration(milliseconds: 800),
+                                    );
 
-                                  // 🟢 200 success
-                                  if (res.statusCode == 200) {
-                                    AppAlert.success(context, message);
-
+                                    // ⏳ รอให้ User เห็นเครื่องหมายถูกสักครู่ (500ms - 1s) แล้วกลับหน้าก่อนหน้า
                                     await Future.delayed(
                                       const Duration(milliseconds: 800),
                                     );
 
                                     if (navigator.canPop()) {
+                                      // ส่งค่า true กลับไปเพื่อให้หน้าต้นทางรู้ว่ามีการอัปเดตข้อมูล (ไว้ใช้สั่ง refresh หน้าหลัก)
                                       navigator.pop(true);
                                     }
-                                  }
-                                  // 🔵 409 warning
-                                  else if (res.statusCode == 409) {
-                                    AppAlert.warning(context, message);
-                                  }
-                                  // 🟡 401 / 404 warning
-                                  else if (res.statusCode == 401 ||
-                                      res.statusCode == 404) {
-                                    AppAlert.warning(context, message);
-                                  }
-                                  // 🔴 error อื่นๆ
-                                  else {
-                                    AppAlert.error(context, message);
+                                  } else {
+                                    // ❌ แจ้งเตือนเมื่อผิดพลาด
+                                    AppAlert.error(
+                                      context,
+                                      "ไม่สามารถแก้ไขข้อมูลได้",
+                                    );
                                   }
                                 },
                               );

@@ -34,20 +34,9 @@ class ApiService {
   }
 
   // UPDATE ASSET
-  static Future<ApiResponse> updateAsset(
-    int id,
-    Map<String, dynamic> data,
-  ) async {
-    final res = await ApiClient.put('/api/asset/$id', data);
-
-    String message = "Unknown error";
-
-    try {
-      final body = jsonDecode(res.body);
-      message = body['message'] ?? body['error'] ?? message;
-    } catch (_) {}
-
-    return ApiResponse(statusCode: res.statusCode, message: message);
+  static Future<bool> updateAsset(int id, Map<String, dynamic> data) async {
+    final res = await ApiClient.put('/api/asset/$id', jsonEncode(data));
+    return res.statusCode == 200;
   }
 
   // CHECKLIST (categoryId / assetId)
@@ -56,11 +45,24 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
-  // SUBMIT AUDIT
-  static Future<bool> submitAudit(Map<String, dynamic> body) async {
-    final res = await ApiClient.post('/api/submitaudit', jsonEncode(body));
-    return res.statusCode == 200;
-  }
+// SUBMIT AUDIT
+static Future<ApiResponse> submitAudit(
+  Map<String, dynamic> data,
+) async {
+  final res = await ApiClient.post('/api/submitaudit', data);
+
+  String message = "error";
+
+  try {
+    final body = jsonDecode(res.body);
+    message = body['message'] ?? body['error'] ?? message;
+  } catch (_) {}
+
+  return ApiResponse(
+    statusCode: res.statusCode,
+    message: message,
+  );
+}
 
   // AUDIT LIST (assetId)
   static Future<List<dynamic>> getAudit(int assetId) async {
@@ -107,15 +109,51 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
-  // SUBMIT AUDIT
+  // UPLOAD PICTURE
   static Future<bool> uploadpicture(Map<String, dynamic> body) async {
     final res = await ApiClient.post('/api/uploadpicture', jsonEncode(body));
     return res.statusCode == 200;
   }
 
-  // UPDATE ASSET
-  static Future<bool> updateaudit(int id, Map<String, dynamic> data) async {
-    final res = await ApiClient.put('/api/audit/$id', jsonEncode(data));
-    return res.statusCode == 200;
+// UPDATE AUDIT
+static Future<ApiResponse> updateaudit(
+  int id,
+  Map<String, dynamic> data,
+) async {
+
+  final res = await ApiClient.put('/api/audit/$id', data);
+
+  String message = "error";
+
+  try {
+    final body = jsonDecode(res.body);
+    message = body['message'] ?? body['error'] ?? message;
+  } catch (_) {}
+
+  return ApiResponse(
+    statusCode: res.statusCode,
+    message: message,
+  );
+}
+
+  // AUDIT HISTORY (assetId)
+  static Future<List<dynamic>> getAuditHistory(int assetId) async {
+    final res = await ApiClient.get('/api/audit/$assetId');
+
+    final data = jsonDecode(res.body);
+
+    if (data == null) {
+      return [];
+    }
+
+    if (data is List) {
+      return data;
+    }
+
+    if (data is Map<String, dynamic>) {
+      return [data]; // แปลง Map เป็น List
+    }
+
+    return [];
   }
 }
