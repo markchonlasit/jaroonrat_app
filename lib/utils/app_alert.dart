@@ -73,7 +73,7 @@ static void warning(BuildContext context, String message) {
   }) {
     QuickAlert.show(
       context: context,
-      type: QuickAlertType.success,
+      type: QuickAlertType.warning,
       text: message,
       confirmBtnText: "ตกลง",
       cancelBtnText: "ยกเลิก",
