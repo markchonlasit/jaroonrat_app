@@ -599,7 +599,7 @@ class _SafetylistPageState extends State<SafetylistPage> {
                 ),
                 const SizedBox(height: 4),
 
-                if (widget.categoryId == 0) ...[
+                if (widget.categoryId == 0 || widget.categoryId == 1) ...[
                   Row(
                     children: [
                       const Icon(
@@ -664,7 +664,7 @@ class _SafetylistPageState extends State<SafetylistPage> {
                     ),
                   ],
                 ),
-
+                const SizedBox(height: 6),
                 // วันที่หมดอายุ (เพิ่มเข้ามาตาม Layout ใหม่)
               ],
             ),
