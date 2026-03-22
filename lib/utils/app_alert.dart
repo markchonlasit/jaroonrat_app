@@ -21,29 +21,30 @@ class AppAlert {
     });
   }
 
-/// =========================
-/// 2. ERROR
-/// =========================
-static void error(BuildContext context, String message) {
-  QuickAlert.show(
-    context: context,
-    type: QuickAlertType.error,
-    text: message,
-    confirmBtnText: 'ตกลง', // 👈 เปลี่ยนข้อความปุ่ม
-  );
-}
+  /// =========================
+  /// 2. ERROR
+  /// =========================
+  static void error(BuildContext context, String message) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      text: message,
+      confirmBtnText: 'ตกลง', // 👈 เปลี่ยนข้อความปุ่ม
+    );
+  }
 
-/// =========================
-/// 3. WARNING
-/// =========================
-static void warning(BuildContext context, String message) {
-  QuickAlert.show(
-    context: context,
-    type: QuickAlertType.warning,
-    text: message,
-    confirmBtnText: 'ตกลง', // 👈 เปลี่ยนข้อความปุ่ม
-  );
-}
+  /// =========================
+  /// 3. WARNING
+  /// =========================
+  static void warning(BuildContext context, String message) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      text: message,
+      confirmBtnText: 'ตกลง', // 👈 เปลี่ยนข้อความปุ่ม
+    );
+  }
+
   /// =========================
   /// 4. LOADING
   /// =========================
@@ -73,7 +74,7 @@ static void warning(BuildContext context, String message) {
   }) {
     QuickAlert.show(
       context: context,
-      type: QuickAlertType.warning,
+      type: QuickAlertType.confirm,
       text: message,
       confirmBtnText: "ตกลง",
       cancelBtnText: "ยกเลิก",
@@ -81,16 +82,28 @@ static void warning(BuildContext context, String message) {
       barrierDismissible: false,
 
       onConfirmBtnTap: () {
-        Navigator.pop(context); // ปิด dialog
+        Navigator.of(context, rootNavigator: true).pop(); // 🔥 FIX
         onConfirm();
       },
 
       onCancelBtnTap: () {
-        Navigator.pop(context); // ปิด dialog
+        Navigator.of(context, rootNavigator: true).pop(); // 🔥 FIX
         if (onCancel != null) {
           onCancel();
         }
       },
+    );
+  }
+
+  /// =========================
+  /// 6. INFO
+  /// =========================
+  static void info(BuildContext context, String message) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.info,
+      text: message,
+      confirmBtnText: 'ตกลง',
     );
   }
 }

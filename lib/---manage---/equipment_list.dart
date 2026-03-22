@@ -21,9 +21,19 @@ class _AssetListPageState extends State<AssetListPage> {
   String keyword = '';
   late Future<Map<String, dynamic>> _assetFuture;
   @override
+  @override
   void initState() {
     super.initState();
-    _assetFuture = ApiService.getAssetList(widget.categoryId);
+    _loadAssets();
+  }
+
+  Future<void> _loadAssets() async {
+    setState(() {
+      _assetFuture = Future.delayed(
+        const Duration(milliseconds: 100),
+        () => ApiService.getAssetList(widget.categoryId),
+      );
+    });
   }
 
   String? selectedType;
@@ -669,17 +679,10 @@ class _AssetListPageState extends State<AssetListPage> {
               const SizedBox(height: 3),
               _actionButton(
                 onPressed: () async {
-                  final updated = await showEditAssetDialog(
-                    context,
-                    item['id'],
-                  );
+                  final result = await showEditAssetDialog(context, item['id']);
 
-                  // ✅ ถ้ามีการแก้ไขสำเร็จ (ได้รับค่า true กลับมา)
-                  if (updated == true) {
-                    setState(() {
-                      // 🔥 ต้องสั่งดึงข้อมูลจาก API ใหม่ลงตัวแปรเดิมที่ FutureBuilder ใช้อยู่
-                      _assetFuture = ApiService.getAssetList(widget.categoryId);
-                    });
+                  if (result == true) {
+                    await _loadAssets(); // 🔥 reload
                   }
                 },
                 icon: Icons.edit,

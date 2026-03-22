@@ -93,6 +93,14 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
             asset['active'] == 0 ? 0 : 1,
           );
 
+          final originalData = {
+            'name': asset['name'] ?? '',
+            'location': asset['location'] ?? '',
+            'active': asset['active'] == 0 ? 0 : 1,
+            'firetype': asset['firetype'],
+            'expdate': apiDateValue, // ค่าที่แปลงแล้ว
+          };
+
           /// =========================
           /// UI
           /// =========================
@@ -191,17 +199,30 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                               child: DropdownButtonFormField<String>(
                                 initialValue: currentType,
                                 isExpanded: true,
+                                alignment:
+                                    Alignment.center, // 👈 จัดตำแหน่ง dropdown
+
                                 decoration: _innerInputDecoration(
-                                  hasIcon: true,
+                                  hasIcon: false,
                                 ),
+
                                 items: fireTypeItems
                                     .map(
                                       (e) => DropdownMenuItem(
                                         value: e,
-                                        child: Text(e),
+                                        alignment: Alignment
+                                            .center, // 👈 จัด item ให้อยู่กลาง
+                                        child: Center(
+                                          // 👈 ครอบ Text อีกชั้นให้ชัวร์
+                                          child: Text(
+                                            e,
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
                                       ),
                                     )
                                     .toList(),
+
                                 onChanged: (v) {
                                   if (v != null) {
                                     fireTypeNotifier!.value = v;
@@ -236,19 +257,37 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                               child: DropdownButtonFormField<int>(
                                 initialValue: currentStatus,
                                 isExpanded: true,
+                                alignment:
+                                    Alignment.center, // 👈 จัดตำแหน่งหลัก
+
                                 decoration: _innerInputDecoration(
                                   hasIcon: false,
                                 ),
+
                                 items: const [
                                   DropdownMenuItem(
                                     value: 1,
-                                    child: Text('ใช้งาน'),
+                                    alignment:
+                                        Alignment.center, // 👈 item อยู่กลาง
+                                    child: Center(
+                                      child: Text(
+                                        'ใช้งาน',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
                                   ),
                                   DropdownMenuItem(
                                     value: 0,
-                                    child: Text('ไม่ใช้งาน'),
+                                    alignment: Alignment.center,
+                                    child: Center(
+                                      child: Text(
+                                        'ไม่ใช้งาน',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
                                   ),
                                 ],
+
                                 onChanged: (v) {
                                   if (v != null) {
                                     activeNotifier.value = v;
@@ -261,7 +300,8 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                       ),
 
                       /// EXP DATE
-                      if (categoryName.contains('ถังดับเพลิง'))
+                      if (categoryName.contains('ถังดับเพลิง') ||
+                          categoryName.contains('ลูกบอลดับเพลิง'))
                         _customRowField(
                           icon: Icons.calendar_month,
                           label: 'วันหมดอายุ :',
@@ -343,16 +383,10 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                             icon: Icons.edit,
                             color: const Color(0xFFFFC107),
                             onPressed: () async {
-                              // 1. เก็บ Navigator และ ScaffoldMessenger (ถ้าต้องใช้) ไว้ก่อน await
-                              final navigator = Navigator.of(
-                                context,
-                              ); // เก็บ navigator ไว้ก่อน
-
                               AppAlert.successConfirm(
                                 context,
                                 "คุณต้องการแก้ไขข้อมูลอุปกรณ์นี้หรือไม่?",
                                 onConfirm: () async {
-                                  // เตรียมข้อมูล
                                   final Map<String, dynamic> data = {
                                     'name': nameCtrl.text,
                                     'location': locationCtrl.text,
@@ -368,45 +402,75 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                                     data['firetype'] = fireTypeNotifier.value;
                                   }
 
-                                  // 🔄 แสดง Loading
+                                  /// =========================
+                                  /// 🔥 CHECK ไม่มีการแก้ไข
+                                  /// =========================
+                                  bool isChanged = false;
+
+                                  if (data['name'] != originalData['name']) {
+                                    isChanged = true;
+                                  }
+                                  if (data['location'] !=
+                                      originalData['location']) {
+                                    isChanged = true;
+                                  }
+                                  if (data['active'] != originalData['active']) {
+                                    isChanged = true;
+                                  }
+
+                                  if (data['firetype'] !=
+                                      originalData['firetype']) {
+                                    isChanged = true;
+                                  }
+                                  if (data['expdate'] !=
+                                      originalData['expdate']) {
+                                    isChanged = true;
+                                  }
+
+                                  /// ❗ ถ้าไม่มีการเปลี่ยนแปลง
+                                  if (!isChanged) {
+                                    AppAlert.info(
+                                      context,
+                                      "ไม่มีการแก้ไขข้อมูล",
+                                    );
+                                    return;
+                                  }
+
+                                  /// 🔄 Loading
                                   AppAlert.loading(context);
 
-                                  // 🚀 ส่งข้อมูลไปที่ API
-                                  final success = await ApiService.updateAsset(
+                                  /// 🚀 API
+                                  final res = await ApiService.updateAsset(
                                     assetId,
                                     data,
                                   );
 
-                                  // 🛑 ตรวจสอบว่า Widget ยังอยู่ในหน้าจอไหม
                                   if (!context.mounted) return;
 
-                                  // ปิด Loading
                                   AppAlert.close(context);
 
-                                  if (success) {
-                                    AppAlert.success(
-                                      context,
-                                      "แก้ไขข้อมูลสำเร็จ",
-                                    );
+                                  /// ✅ SUCCESS
+                                  if (res.statusCode == 200) {
+                                    AppAlert.success(context, res.message);
+
                                     await Future.delayed(
                                       const Duration(milliseconds: 800),
                                     );
 
-                                    // ⏳ รอให้ User เห็นเครื่องหมายถูกสักครู่ (500ms - 1s) แล้วกลับหน้าก่อนหน้า
-                                    await Future.delayed(
-                                      const Duration(milliseconds: 800),
-                                    );
+                                    if (!context.mounted) return;
 
-                                    if (navigator.canPop()) {
-                                      // ส่งค่า true กลับไปเพื่อให้หน้าต้นทางรู้ว่ามีการอัปเดตข้อมูล (ไว้ใช้สั่ง refresh หน้าหลัก)
-                                      navigator.pop(true);
-                                    }
-                                  } else {
-                                    // ❌ แจ้งเตือนเมื่อผิดพลาด
-                                    AppAlert.error(
+                                    Navigator.of(
                                       context,
-                                      "ไม่สามารถแก้ไขข้อมูลได้",
-                                    );
+                                      rootNavigator: true,
+                                    ).pop(); // ปิด alert
+                                    Navigator.pop(
+                                      context,
+                                      true,
+                                    ); // ปิด dialog + ส่งค่า
+                                  }
+                                  /// ❌ ERROR
+                                  else {
+                                    AppAlert.error(context, res.message);
                                   }
                                 },
                               );
