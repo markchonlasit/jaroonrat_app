@@ -679,8 +679,8 @@ class _SafetylistPageState extends State<SafetylistPage> {
               const SizedBox(height: 9),
               if (item['ischeck'] == false)
                 _actionButton(
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => AuditPage(
@@ -691,6 +691,14 @@ class _SafetylistPageState extends State<SafetylistPage> {
                         ),
                       ),
                     );
+
+                    if (result == true) {
+                      setState(() {
+                        _assetFuture = ApiService.getAssetList(
+                          widget.categoryId,
+                        );
+                      });
+                    }
                   },
                   icon: Icons.visibility,
                   label: 'ตรวจสภาพ',

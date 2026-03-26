@@ -5,7 +5,11 @@ class AppAlert {
   /// =========================
   /// 1. SUCCESS
   /// =========================
-  static void success(BuildContext context, String message) {
+  static void success(
+    BuildContext context,
+    String message, {
+    VoidCallback? onComplete,
+  }) {
     QuickAlert.show(
       context: context,
       type: QuickAlertType.success,
@@ -15,8 +19,12 @@ class AppAlert {
     );
 
     Future.delayed(const Duration(seconds: 1), () {
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // 🔥 ปิด alert
+
+        if (onComplete != null) {
+          onComplete(); // 🔥 ทำต่อ (pop หน้า)
+        }
       }
     });
   }

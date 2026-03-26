@@ -680,7 +680,6 @@ class _AssetListPageState extends State<AssetListPage> {
               _actionButton(
                 onPressed: () async {
                   final result = await showEditAssetDialog(context, item['id']);
-
                   if (result == true) {
                     await _loadAssets(); // 🔥 reload
                   }

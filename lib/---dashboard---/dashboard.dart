@@ -12,8 +12,28 @@ import '/---notify--/notify.dart';
 import 'package:flutter/cupertino.dart';
 import '/services/api_services.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  late Future<Map<String, dynamic>> alertFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    alertFuture = ApiService.getAlert();
+  }
+
+  // ✅ ฟังก์ชัน Refresh (อยู่ใน State เท่านั้น!)
+  Future<void> _onRefresh() async {
+    setState(() {
+      alertFuture = ApiService.getAlert(); // โหลดใหม่
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +45,7 @@ class DashboardPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const ProfilePage(), // 👈 จาก proflie.dart
+              builder: (_) => const ProfilePage(),
             ),
           );
         },
@@ -39,24 +59,31 @@ class DashboardPage extends StatelessWidget {
           );
         },
       ),
+
+      // ✅ 👇 เพิ่ม RefreshIndicator ตรงนี้
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
-          child: Column(
-            children: const [
-              BranchCard(),
-              SizedBox(height: 6),
-              EquipmentSection(),
-              SizedBox(height: 6),
-              TotalEquipmentSection(),
-            ],
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(), // สำคัญ!
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
+            child: Column(
+              children: const [
+                BranchCard(),
+                SizedBox(height: 6),
+                EquipmentSection(),
+                SizedBox(height: 6),
+                TotalEquipmentSection(),
+              ],
+            ),
           ),
         ),
       ),
+
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 16), // 👈 เว้นขอบจอ
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
         child: Container(
-          padding: const EdgeInsets.all(16), // 👈 ระยะด้านในกรอบ
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -69,7 +96,7 @@ class DashboardPage extends StatelessWidget {
               ),
             ],
           ),
-          child: const ActionButtonSection(),
+          child: ActionButtonSection(alertFuture: alertFuture), // 👈 ส่งค่าไป
         ),
       ),
     );
@@ -80,7 +107,9 @@ class DashboardPage extends StatelessWidget {
 /// 🔹 ACTION BUTTON
 /// =========================
 class ActionButtonSection extends StatelessWidget {
-  const ActionButtonSection({super.key});
+  final Future<Map<String, dynamic>> alertFuture;
+
+  const ActionButtonSection({super.key, required this.alertFuture});
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +147,7 @@ class ActionButtonSection extends StatelessWidget {
         SizedBox(width: 10),
         Expanded(
           child: FutureBuilder<Map<String, dynamic>>(
-            future: ApiService.getAlert(),
+            future: alertFuture, // ✅ ใช้ตัวนี้แทน
             builder: (context, snapshot) {
               int badgeCount = 0;
 
@@ -131,7 +160,7 @@ class ActionButtonSection extends StatelessWidget {
                 icon: Icons.notifications,
                 bgColor: const Color.fromARGB(255, 235, 227, 213),
                 iconColor: Colors.orange,
-                badge: badgeCount, // 👈 ดึงจาก API ตรงนี้เลย
+                badge: badgeCount,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -156,7 +185,7 @@ class _ActionButton extends StatelessWidget {
   final Color bgColor;
   final Color iconColor;
   final int? badge;
-  final VoidCallback? onTap; // 👈 เพิ่ม
+  final VoidCallback? onTap;
 
   const _ActionButton({
     required this.label,
@@ -164,7 +193,7 @@ class _ActionButton extends StatelessWidget {
     required this.bgColor,
     required this.iconColor,
     this.badge,
-    this.onTap, // 👈 เพิ่ม
+    this.onTap,
   });
 
   @override
@@ -174,7 +203,6 @@ class _ActionButton extends StatelessWidget {
       child: Stack(
         children: [
           InkWell(
-            // 👈 ครอบด้วย InkWell
             borderRadius: BorderRadius.circular(16),
             onTap: onTap,
             child: Container(
@@ -202,7 +230,6 @@ class _ActionButton extends StatelessWidget {
               ),
             ),
           ),
-
           if (badge != null)
             Positioned(
               top: 6,

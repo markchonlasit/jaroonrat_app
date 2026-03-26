@@ -123,7 +123,7 @@ class _AuditPageState extends State<AuditPage> {
 
   /// SUBMIT
   Future<void> submit() async {
-    final navigator = Navigator.of(context);
+
 
     if (isLocked) {
       AppAlert.warning(context, "รายการนี้เกิน 7 วันแล้ว ไม่สามารถแก้ไขได้");
@@ -147,8 +147,7 @@ class _AuditPageState extends State<AuditPage> {
       "คุณต้องการบันทึกการตรวจสภาพนี้หรือไม่?",
       onConfirm: () async {
         final now = DateTime.now();
-        final yyyymm =
-            "${now.year}${now.month.toString().padLeft(2, '0')}";
+        final yyyymm = "${now.year}${now.month.toString().padLeft(2, '0')}";
 
         final imagePath =
             "${widget.assetId}/$yyyymm/id${widget.assetId}_$yyyymm.jpg";
@@ -158,10 +157,7 @@ class _AuditPageState extends State<AuditPage> {
         for (var item in checklist) {
           final id = item['id'];
 
-          ans.add({
-            "id": id,
-            "status": answers[id] == "Y" ? 1 : 2
-          });
+          ans.add({"id": id, "status": answers[id] == "Y" ? 1 : 2});
         }
 
         Map<String, dynamic> data = {
@@ -196,15 +192,15 @@ class _AuditPageState extends State<AuditPage> {
         final message = res.message;
 
         if (res.statusCode == 200) {
-          AppAlert.success(context, message);
-
-          await Future.delayed(const Duration(milliseconds: 800));
-
-          if (!mounted) return;
-
-          if (navigator.canPop()) {
-            navigator.pop(true);
-          }
+          AppAlert.success(
+            context,
+            message,
+            onComplete: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop(true); // 🔥 ส่งค่า true กลับ
+              }
+            },
+          );
         } else if (res.statusCode == 409) {
           AppAlert.warning(context, message);
         } else if (res.statusCode == 401 || res.statusCode == 404) {
@@ -269,7 +265,6 @@ class _AuditPageState extends State<AuditPage> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-
                       /// IMAGE
                       if (image != null ||
                           (imageUrl != null && imageUrl!.isNotEmpty))
@@ -339,8 +334,7 @@ class _AuditPageState extends State<AuditPage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: const [
-                              BoxShadow(
-                                  blurRadius: 4, color: Colors.black12),
+                              BoxShadow(blurRadius: 4, color: Colors.black12),
                             ],
                           ),
                           child: Column(
@@ -357,7 +351,6 @@ class _AuditPageState extends State<AuditPage> {
 
                               Row(
                                 children: [
-
                                   Expanded(
                                     child: RadioListTile<String>(
                                       value: "Y",
@@ -405,8 +398,7 @@ class _AuditPageState extends State<AuditPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          border:
-                              Border.all(color: Colors.grey.shade400),
+                          border: Border.all(color: Colors.grey.shade400),
                         ),
                         child: TextField(
                           controller: remarkController,
