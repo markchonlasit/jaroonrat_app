@@ -20,16 +20,19 @@ class _NotificationPageState extends State<NotificationPage> {
   DateTime? selectedDate;
   bool showFilter = false;
   String selectedStatusCategory = "ทั้งหมด"; // สำหรับ Filter จาก Status Box
+  int selectedDeviceId = 0; // 0 = ถังดับเพลิง (default)
 
   @override
   void initState() {
     super.initState();
-    fetchAssets();
+    fetchAssets(selectedDeviceId);
   }
 
-  Future<void> fetchAssets() async {
+  Future<void> fetchAssets([int? deviceId]) async {
     try {
-      final response = await ApiService.getAssetexpdate(0);
+      final response = await ApiService.getAssetexpdate(
+        deviceId ?? selectedDeviceId,
+      );
       setState(() {
         assets = response['asset'] ?? [];
         loading = false;
@@ -199,15 +202,15 @@ class _NotificationPageState extends State<NotificationPage> {
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.orange, width: 2),
-                        color: Colors.white,
+                        border: Border.all(color: Colors.black, width: 1),
+                        color: Colors.orange,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: const [
                           Icon(
                             Icons.notifications_none,
-                            color: Colors.orange,
+                            color: Colors.white,
                             size: 28,
                           ),
                           SizedBox(width: 10),
@@ -216,6 +219,7 @@ class _NotificationPageState extends State<NotificationPage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
                           ),
                         ],
@@ -230,34 +234,143 @@ class _NotificationPageState extends State<NotificationPage> {
                 // ค้นหาส่วนใน build() -> Column -> Padding ที่มี Row ของ Status Box
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    children: [
-                      _statusBoxWithIcon(
-                        "ใกล้หมดอายุ",
-                        countStatus(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        /// 🔽 SELECT อุปกรณ์
+                        ///
+                        Expanded(
+                          child: Container(
+                            height: 140,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: getDeviceColor(selectedDeviceId),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                /// 🔽 SELECT (ไม่มี icon แล้ว)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Colors.white, // ✅ พื้นหลังเฉพาะ select
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<int>(
+                                      value: selectedDeviceId,
+                                      isExpanded: true,
+                                      icon: Icon(
+                                        Icons.keyboard_arrow_down,
+                                        color: getDeviceColor(selectedDeviceId),
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black,
+                                      ),
+
+                                      /// ✅ แสดงแค่ TEXT (ไม่มี icon)
+                                      selectedItemBuilder: (context) {
+                                        return [0, 1].map((id) {
+                                          return Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              id == 0
+                                                  ? "ถังดับเพลิง"
+                                                  : "ลูกบอลดับเพลิง",
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          );
+                                        }).toList();
+                                      },
+
+                                      items: const [
+                                        DropdownMenuItem(
+                                          value: 0,
+                                          child: Text("ถังดับเพลิง"),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 1,
+                                          child: Text("ลูกบอลดับเพลิง"),
+                                        ),
+                                      ],
+
+                                      onChanged: (value) {
+                                        if (value != null) {
+                                          setState(() {
+                                            selectedDeviceId = value;
+                                            selectedType =
+                                                "ทั้งหมด"; // 🔥 เพิ่มตรงนี้
+                                            loading = true;
+                                          });
+                                          fetchAssets(value);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                /// 🔥 ICON ใหญ่ด้านล่าง (นอก select)
+                                Expanded(
+                                  child: Center(
+                                    child: Icon(
+                                      getDeviceIcon(selectedDeviceId),
+                                      size: 50, // 🔥 ใหญ่สะใจ
+                                      color: getDeviceColor(selectedDeviceId),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        /// 🟠 ใกล้หมดอายุ
+                        _statusBoxWithIcon(
                           "ใกล้หมดอายุ",
-                        ), // แก้ให้ตรงกับ return ของ getStatus
-                        Colors.orange,
-                        Icons.warning_amber,
-                        "ใกล้หมดอายุ",
-                      ),
-                      const SizedBox(width: 8),
-                      _statusBoxWithIcon(
-                        "ใช้งานได้",
-                        countStatus("ใช้งานได้"),
-                        Colors.green,
-                        Icons.check_circle,
-                        "ใช้งานได้",
-                      ),
-                      const SizedBox(width: 8),
-                      _statusBoxWithIcon(
-                        "หมดอายุ",
-                        countStatus("หมดอายุ"),
-                        Colors.red,
-                        Icons.error,
-                        "หมดอายุ",
-                      ),
-                    ],
+                          countStatus("ใกล้หมดอายุ"),
+                          Colors.orange,
+                          Icons.warning_amber_outlined,
+                          "ใกล้หมดอายุ",
+                        ),
+                        const SizedBox(width: 10),
+
+                        /// 🔴 หมดอายุ
+                        _statusBoxWithIcon(
+                          "หมดอายุ",
+                          countStatus("หมดอายุ"),
+                          Colors.red,
+                          Icons.error,
+                          "หมดอายุ",
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -284,10 +397,13 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  /// =========================
-  /// SUMMARY CARD (UI แบบในรูป + Logic total/filtered)
-  /// =========================
   Widget _summaryCard(int total, int filtered) {
+    // 🔥 กำหนดชื่ออุปกรณ์
+    final deviceName = selectedDeviceId == 0 ? "ถังดับเพลิง" : "ลูกบอลดับเพลิง";
+
+    final deviceColor = getDeviceColor(selectedDeviceId);
+    final deviceIcon = getDeviceIcon(selectedDeviceId);
+
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Container(
@@ -305,7 +421,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "รายการถังดับเพลิง",
+                    "รายการ$deviceName", // 🔥 เปลี่ยนตามประเภท
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -322,22 +438,22 @@ class _NotificationPageState extends State<NotificationPage> {
               ),
             ),
 
-            /// 🔹 ปุ่มด้านขวา (ตาม category)
+            /// 🔹 ฝั่งขวา (badge อุปกรณ์)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.red, width: 2),
+                border: Border.all(color: deviceColor, width: 2),
                 color: Colors.white,
               ),
               child: Row(
                 children: [
-                  Icon(Icons.fire_extinguisher, color: Colors.red, size: 22),
+                  Icon(deviceIcon, color: deviceColor, size: 22),
                   const SizedBox(width: 8),
                   Text(
-                    "ถังดับเพลิง",
+                    deviceName,
                     style: TextStyle(
-                      color: Colors.red,
+                      color: deviceColor,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -356,13 +472,15 @@ class _NotificationPageState extends State<NotificationPage> {
   /// =========================
   Widget _searchBar(List assets) {
     // ดึงรายการประเภทอุปกรณ์ที่มีอยู่ในข้อมูลมาสร้าง Dropdown
-    final types = assets
-        .map((e) => e['type']?.toString())
-        .where((e) => e != null && e.isNotEmpty)
-        .toSet()
-        .toList();
+    List<String> types = [];
 
-    types.insert(0, "ทั้งหมด");
+    if (selectedDeviceId == 0) {
+      // 🔴 ถังดับเพลิง
+      types = ["ทั้งหมด", "dry", "เขียว", "เงิน", "แดง"];
+    } else if (selectedDeviceId == 1) {
+      // 🔵 ลูกบอลดับเพลิง
+      types = ["ทั้งหมด", "เขียว", "แดง"];
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -820,7 +938,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   ),
                   child: Icon(icon, color: mainColor, size: 24),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 5),
 
                 /// ชื่อสถานะ
                 Text(
@@ -849,5 +967,27 @@ class _NotificationPageState extends State<NotificationPage> {
         ),
       ),
     );
+  }
+}
+
+IconData getDeviceIcon(int id) {
+  switch (id) {
+    case 0:
+      return Icons.fire_extinguisher; // ถังดับเพลิง
+    case 1:
+      return Icons.sports_baseball; // ลูกบอลดับเพลิง
+    default:
+      return Icons.device_unknown;
+  }
+}
+
+Color getDeviceColor(int id) {
+  switch (id) {
+    case 0:
+      return Colors.red;
+    case 1:
+      return const Color(0xFF0047AB);
+    default:
+      return Colors.grey;
   }
 }
