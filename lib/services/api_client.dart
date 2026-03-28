@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import '../main.dart';
 import '/---login---/login.dart';
+ import 'package:http_parser/http_parser.dart'; 
 
 class ApiClient {
   static const String baseUrl = 'https://api.jaroonrat.com/safetyaudit';
@@ -23,6 +25,32 @@ class ApiClient {
     _check401(response);
     return response;
   }
+
+  // เพิ่ม import นี้ด้านบน (มีอยู่แล้ว)
+  // import 'package:http/http.dart' as http;
+
+// ← เพิ่ม import นี้
+
+static Future<http.Response> postMultipart(
+  String path, {
+  required File imageFile,
+  required Map<String, String> fields,
+}) async {
+  final request = http.MultipartRequest('POST', url(path));
+  request.headers['Authorization'] = 'Bearer ${AuthService.token}';
+  request.fields.addAll(fields);
+
+  request.files.add(await http.MultipartFile.fromPath(
+    'file',
+    imageFile.path,
+    contentType: MediaType('image', 'jpeg'), // ← เพิ่มบรรทัดนี้
+  ));
+
+  final streamed = await request.send();
+  final response = await http.Response.fromStream(streamed);
+  _check401(response);
+  return response;
+}
 
   static Future<http.Response> post(String path, dynamic body) async {
     final response = await http.post(

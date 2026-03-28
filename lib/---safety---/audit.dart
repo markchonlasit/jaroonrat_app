@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '/services/api_services.dart';
 import '/utils/app_alert.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class AuditPage extends StatefulWidget {
   final int assetId;
@@ -59,6 +59,18 @@ class _AuditPageState extends State<AuditPage> {
   void dispose() {
     remarkController.dispose();
     super.dispose();
+  }
+
+  Future<File> compressImage(File file) async {
+    final targetPath = file.path.replaceAll(".jpg", "_compressed.jpg");
+
+    final result = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path,
+      targetPath,
+      quality: 60, // 🔥 ลดขนาด (50–70 ดีสุด)
+    );
+
+    return File(result!.path);
   }
 
   /// LOAD CHECKLIST
@@ -117,14 +129,13 @@ class _AuditPageState extends State<AuditPage> {
     if (img != null) {
       setState(() {
         image = File(img.path);
+        imageUrl = null; // ล้าง URL เก่าเมื่อเลือกรูปใหม่
       });
     }
   }
 
   /// SUBMIT
   Future<void> submit() async {
-
-
     if (isLocked) {
       AppAlert.warning(context, "รายการนี้เกิน 7 วันแล้ว ไม่สามารถแก้ไขได้");
       return;
@@ -146,36 +157,50 @@ class _AuditPageState extends State<AuditPage> {
       context,
       "คุณต้องการบันทึกการตรวจสภาพนี้หรือไม่?",
       onConfirm: () async {
-        final now = DateTime.now();
-        final yyyymm = "${now.year}${now.month.toString().padLeft(2, '0')}";
+        AppAlert.loading(context);
 
-        final imagePath =
-            "${widget.assetId}/$yyyymm/id${widget.assetId}_$yyyymm.jpg";
+        // ===========================
+        // STEP 1 : UPLOAD PICTURE
+        // ===========================
+        String? finalImageUrl = imageUrl; // ใช้ URL เดิมถ้าไม่ได้เลือกรูปใหม่
 
+        if (image != null) {
+          // 🔥 STEP 1: บีบรูปก่อน
+          File compressedImage = await compressImage(image!);
+
+          // 🔥 STEP 2: อัปโหลดรูปที่บีบแล้ว
+          final uploadedUrl = await ApiService.uploadpicture(
+            imageFile: compressedImage,
+            assetId: widget.assetId,
+            imagePath: "", // ไม่ใช้แล้ว
+          );
+
+          if (uploadedUrl != null) {
+            finalImageUrl = uploadedUrl;
+          } else {
+            finalImageUrl = "";
+          }
+        }
+
+        // ===========================
+        // STEP 2 : BUILD ANS LIST
+        // ===========================
         List ans = [];
 
         for (var item in checklist) {
           final id = item['id'];
-
           ans.add({"id": id, "status": answers[id] == "Y" ? 1 : 2});
         }
 
+        // ===========================
+        // STEP 3 : SUBMIT / UPDATE AUDIT
+        // ===========================
         Map<String, dynamic> data = {
           "assetid": widget.assetId,
           "remark": remarkController.text,
-          "url": imagePath,
+          "url": finalImageUrl ?? "", // ✅ ส่ง URL จริงที่ได้จาก upload
           "ans": ans,
         };
-
-        AppAlert.loading(context);
-
-        if (image != null) {
-          await ApiService.uploadpicture({
-            "assetid": widget.assetId,
-            "url": imagePath,
-            "image": base64Encode(image!.readAsBytesSync()),
-          });
-        }
 
         ApiResponse res;
 
@@ -197,7 +222,7 @@ class _AuditPageState extends State<AuditPage> {
             message,
             onComplete: () {
               if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop(true); // 🔥 ส่งค่า true กลับ
+                Navigator.of(context).pop(true);
               }
             },
           );
@@ -265,7 +290,7 @@ class _AuditPageState extends State<AuditPage> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      /// IMAGE
+                      /// IMAGE PREVIEW
                       if (image != null ||
                           (imageUrl != null && imageUrl!.isNotEmpty))
                         Stack(
@@ -284,29 +309,71 @@ class _AuditPageState extends State<AuditPage> {
                                       width: double.infinity,
                                       height: 260,
                                       fit: BoxFit.cover,
+                                      loadingBuilder: (context, child, progress) {
+                                        if (progress == null) return child;
+                                        return SizedBox(
+                                          height: 260,
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              value:
+                                                  progress.expectedTotalBytes !=
+                                                      null
+                                                  ? progress.cumulativeBytesLoaded /
+                                                        progress
+                                                            .expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder: (context, error, stack) =>
+                                          Container(
+                                            height: 260,
+                                            color: Colors.grey.shade200,
+                                            child: const Center(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.broken_image,
+                                                    size: 48,
+                                                    color: Colors.grey,
+                                                  ),
+                                                  SizedBox(height: 8),
+                                                  Text(
+                                                    "โหลดรูปไม่สำเร็จ",
+                                                    style: TextStyle(
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                     ),
                             ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    image = null;
-                                    imageUrl = null;
-                                  });
-                                },
-                                child: const CircleAvatar(
-                                  backgroundColor: Colors.red,
-                                  radius: 16,
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 18,
-                                    color: Colors.white,
+                            if (!isLocked)
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      image = null;
+                                      imageUrl = null;
+                                    });
+                                  },
+                                  child: const CircleAvatar(
+                                    backgroundColor: Colors.red,
+                                    radius: 16,
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
 
@@ -318,7 +385,12 @@ class _AuditPageState extends State<AuditPage> {
                           child: OutlinedButton.icon(
                             onPressed: pickImage,
                             icon: const Icon(Icons.camera_alt),
-                            label: const Text("ถ่ายรูป"),
+                            label: Text(
+                              image != null ||
+                                      (imageUrl != null && imageUrl!.isNotEmpty)
+                                  ? "ถ่ายรูปใหม่"
+                                  : "ถ่ายรูป",
+                            ),
                           ),
                         ),
 

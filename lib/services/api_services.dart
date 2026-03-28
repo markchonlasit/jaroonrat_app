@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
+
 import 'api_client.dart';
 
 class ApiResponse {
@@ -32,7 +35,6 @@ class ApiService {
     final res = await ApiClient.get('/api/asset/$id');
     return jsonDecode(res.body);
   }
-
 
   // UPDATE ASSET
   static Future<ApiResponse> updateAsset(
@@ -117,10 +119,37 @@ class ApiService {
   }
 
   // UPLOAD PICTURE
-  static Future<bool> uploadpicture(Map<String, dynamic> body) async {
-    final res = await ApiClient.post('/api/uploadpicture', jsonEncode(body));
-    return res.statusCode == 200;
+  static Future<String?> uploadpicture({
+  required File imageFile,
+  required int assetId,
+  required String imagePath,
+}) async {
+  final now = DateTime.now();
+  final yyyymm = "${now.year}${now.month.toString().padLeft(2, '0')}";
+
+  final res = await ApiClient.postMultipart(
+    '/api/uploadpicture',
+    imageFile: imageFile,
+    fields: {
+      'assetid': assetId.toString(),
+      'yyyymm': yyyymm, // ✅ แก้เป็นตัวนี้
+    },
+  );
+
+  debugPrint("UPLOAD STATUS: ${res.statusCode}");
+  debugPrint("UPLOAD BODY: ${res.body}");
+
+  if (res.statusCode == 200) {
+    try {
+      final data = jsonDecode(res.body);
+
+      // 👇 จาก postman backend ส่งกลับ message
+      return data['message']; 
+    } catch (_) {}
   }
+
+  return null;
+}
 
   // UPDATE AUDIT
   static Future<ApiResponse> updateaudit(
@@ -154,7 +183,7 @@ class ApiService {
     }
 
     if (data is Map<String, dynamic>) {
-      return [data]; // แปลง Map เป็น List
+      return [data];
     }
 
     return [];
