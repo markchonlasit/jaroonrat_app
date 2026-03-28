@@ -737,11 +737,10 @@ class _NotificationPageState extends State<NotificationPage> {
           /// 🔹 ส่วนที่ 1: Icon + สาขา (Branch)
           Column(
             children: [
-              const Icon(
-                Icons
-                    .fire_extinguisher, // ในหน้าแจ้งเตือนส่วนใหญ่จะเป็นถังดับเพลิง
+              Icon(
+                getDeviceIcon(selectedDeviceId),
                 size: 46,
-                color: Colors.red,
+                color: getDeviceColor(selectedDeviceId),
               ),
               const SizedBox(height: 8),
               _chip('${item['branch']}', color: Colors.blue.shade100),
