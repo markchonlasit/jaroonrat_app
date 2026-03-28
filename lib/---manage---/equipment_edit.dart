@@ -325,7 +325,7 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                               final pickedDate = await showDatePicker(
                                 context: context,
                                 initialDate: initialDate,
-                                firstDate: DateTime(2024),
+                                firstDate: DateTime(1900),
                                 lastDate: DateTime(2500),
                               );
 
@@ -393,7 +393,10 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                                     'active': activeNotifier.value,
                                   };
 
-                                  if (categoryName.contains('ถังดับเพลิง') &&
+                                  if ((categoryName.contains('ถังดับเพลิง') ||
+                                          categoryName.contains(
+                                            'ลูกบอลดับเพลิง',
+                                          )) &&
                                       apiDateValue.isNotEmpty) {
                                     data['expdate'] = apiDateValue;
                                   }
@@ -414,7 +417,8 @@ Future<bool?> showEditAssetDialog(BuildContext context, int assetId) {
                                       originalData['location']) {
                                     isChanged = true;
                                   }
-                                  if (data['active'] != originalData['active']) {
+                                  if (data['active'] !=
+                                      originalData['active']) {
                                     isChanged = true;
                                   }
 
